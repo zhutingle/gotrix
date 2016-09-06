@@ -13,6 +13,7 @@ import (
 
 	"github.com/zhutingle/gotrix/ecdh"
 	"github.com/zhutingle/gotrix/global"
+	"github.com/zhutingle/gotrix/weichat"
 )
 
 type handleFunc struct {
@@ -188,13 +189,14 @@ func (this *handleFunc) RandOrderNo(args []interface{}) (response interface{}, g
 	year, month, day := nowTime.Date()
 	orderNo := int64(year*10000 + int(month)*100 + day)
 	orderNo = orderNo*100000 + orderId
-	response = orderNo
+	response = strconv.FormatInt(orderNo, 10)
 
 	return
 }
 
-func (this *handleFunc) WeiChatSign(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+func (this *handleFunc) WeichatSign(args []interface{}) (response interface{}, gErr *global.GotrixError) {
 	mReq := args[0].(map[string]interface{})
+	fmt.Println(mReq)
 	key := args[1].(string)
 
 	// 第一步：对 key 进行升序排序
@@ -207,9 +209,11 @@ func (this *handleFunc) WeiChatSign(args []interface{}) (response interface{}, g
 	// 第二步：对 key = value 的键值对用 & 连接直接，略过空值
 	var signStrings string
 	for _, k := range sorted_keys {
-		value := fmt.Sprintf("%v", mReq[k])
-		if value != "" {
-			signStrings = signStrings + k + "=" + value + "&"
+		if mReq[k] != nil {
+			value := fmt.Sprintf("%v", mReq[k])
+			if value != "" {
+				signStrings = signStrings + k + "=" + value + "&"
+			}
 		}
 	}
 
@@ -224,4 +228,24 @@ func (this *handleFunc) WeiChatSign(args []interface{}) (response interface{}, g
 	cipherStr := md5Ctx.Sum(nil)
 	upperSign := strings.ToUpper(hex.EncodeToString(cipherStr))
 	return upperSign, nil
+}
+
+func (this *handleFunc) WeichatPay(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	m := args[0].(map[string]interface{})
+	orderReq := weichat.UnifyOrderReq{}
+	orderReq.Appid = m["appid"].(string)
+	orderReq.Body = m["body"].(string)
+	orderReq.Mch_id = m["mch_id"].(string)
+	orderReq.Nonce_str = m["nonce_str"].(string)
+	orderReq.Notify_url = m["notify_url"].(string)
+	orderReq.Trade_type = m["trade_type"].(string)
+	orderReq.Spbill_create_ip = m["spbill_create_ip"].(string)
+	orderReq.Total_fee = strconv.FormatInt(m["total_fee"].(int64), 10)
+	orderReq.Out_trade_no = m["out_trade_no"].(string)
+	orderReq.OpenId = m["openid"].(string)
+	orderReq.Sign = m["sign"].(string)
+
+	response = weichat.UnifiedOrder(orderReq)
+
+	return
 }

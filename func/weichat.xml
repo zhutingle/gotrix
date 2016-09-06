@@ -2,6 +2,7 @@
 <funcs>
 
 	<func id="1000" name="weichatPay" des="发起微信支付">
+		<string name="_ip" must="true" />
 		<int name="orderId" must="true" />
 		<string name="body" must="true" len="0-256" />
 
@@ -10,7 +11,7 @@
 		<job>update orders set orderno = ${orderno},money = (select sum(count*price) from shopping,goods where shopping.goodid = goods.id and shopping.userid = ${userid} and shopping.orderid = ${orderId}) where userid = ${userid} and id = ${orderId}</job>
 
 		<!-- 构建统一下单接口所需参数 -->
-		<job result="info" one="true">select user.openid,orders.money*100 money from user,orders where user.id = orders.userid and orders.id = ${orderId} and orders.userid = ${userid}</job>
+		<job result="info" one="true">select user.openid,cast(orders.money*100 as SIGNED) money from user,orders where user.id = orders.userid and orders.id = ${orderId} and orders.userid = ${userid}</job>
 		<job result="openid">Json(${info},'openid')</job>
 		<job result="total_fee">Json(${info},'money')</job>
 
@@ -19,12 +20,24 @@
 		<job result="Notify_url">Config('Notify_url')</job>
 		<job result="Trade_type">Config('Trade_type')</job>
 		<job result="Nonce_str">RandString(32)</job>
-		<job result="weichatParam">JsonSet('appid',${Appid},'mch_id',${Mch_id},'notify_url',${Notify_url},'trade_type',${Trade_type},'nonce_str',${Nonce_str},'body',${body},'total_fee',${total_fee},'out_trade_no',${orderId},'openid',${openid},'out_trade_no',${orderno})</job>
+		<job result="weichatParam">JsonSet('appid',${Appid},'mch_id',${Mch_id},'notify_url',${Notify_url},'trade_type',${Trade_type},'nonce_str',${Nonce_str},'body',${body},'total_fee',${total_fee},'out_trade_no',${orderId},'openid',${openid},'out_trade_no',${orderno},'spbill_create_ip',${_ip})</job>
 
 		<!-- 对参数进行签名 -->
 		<job result="Key">Config('Key')</job>
-		<job result="sign">WeiChatSign(${weichatParam},${Key})</job>
+		<job result="sign">WeichatSign(${weichatParam},${Key})</job>
 		<job>JsonSet(${weichatParam},'sign',${sign})</job>
+
+		<!-- 请求微信服务器的统一下单接口 -->
+		<job result="weichatResult">WeichatPay(${weichatParam})</job>
+		<job result="returnCode">Json(${weichatResult},'return_code')</job>
+		<job result="returnMsg">Json(${weichatResult},'return_msg')</job>
+		<job>Equal(${returnCode},'FAIL',${returnMsg})</job>
+
+		<!-- 验证接口返回的签名是否正确 -->
+		<job result="sign">Json(${weichatResult},'sign')</job>
+		<job>JsonSet(${weichatResult},'sign',null)</job>
+		<job result="localSign">WeichatSign(${weichatResult},${Key})</job>
+		<job>JsonSet('localSign',${localSign},'sign',${sign})</job>
 	</func>
 
 </funcs>

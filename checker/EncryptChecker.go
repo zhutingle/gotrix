@@ -125,6 +125,7 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 	case float64:
 		checkedParams.Func = int(checkedParams.V["func"].(float64))
 		checkedParams.V["token"] = string(b[:i])
+		checkedParams.V["_ip"] = r.Header.Get("X-Forward-For")
 		checkedParams.Pass = pass
 		checkedParams.Checked = true
 		checkedParams.Self = self

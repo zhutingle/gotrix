@@ -5,7 +5,6 @@ import (
 	"encoding/xml"
 	"fmt"
 	"net/http"
-	"sort"
 	"strings"
 )
 
@@ -35,35 +34,9 @@ type UnifyOrderResp struct {
 	Trade_type  string `xml:"trade_type"`
 }
 
-func UnifiedOrder() {
+func UnifiedOrder(orderReq UnifyOrderReq) (returnMap map[string]interface{}) {
 
-	var yourReq UnifyOrderReq
-	yourReq.Appid = "wx32e598477c7d1ef8"
-	yourReq.Body = "1"
-	yourReq.Mch_id = "1384831502" // 微信支付分配的商户号
-	yourReq.Nonce_str = "5K8264ILTKCH16CQ2502SI8ZNMTM67VS"
-	yourReq.Notify_url = "http://thribu.randiancx.com/weichat"
-	yourReq.Trade_type = "JSAPI"
-	yourReq.Spbill_create_ip = "183.14.251.198"
-	yourReq.Total_fee = "1"
-	yourReq.Out_trade_no = "20160905125346"
-	yourReq.OpenId = "oDuXWv6YHNK34b-lhx5odUsLcyM4"
-
-	var m map[string]interface{}
-	m = make(map[string]interface{}, 0)
-	m["appid"] = yourReq.Appid
-	m["body"] = yourReq.Body
-	m["mch_id"] = yourReq.Mch_id
-	m["nonce_str"] = yourReq.Nonce_str
-	m["notify_url"] = yourReq.Notify_url
-	m["trade_type"] = yourReq.Trade_type
-	m["spbill_create_ip"] = yourReq.Spbill_create_ip
-	m["total_fee"] = yourReq.Total_fee
-	m["out_trade_no"] = yourReq.Out_trade_no
-	m["openid"] = yourReq.OpenId
-	yourReq.Sign = wxpayCalcSign(m, "b840fc02d524045429941cc15f59e41c")
-
-	bytes_req, err := xml.Marshal(yourReq)
+	bytes_req, err := xml.Marshal(orderReq)
 	if err != nil {
 		fmt.Println("以 XML 形式编码发送错误，原因：", err)
 		return
@@ -93,9 +66,20 @@ func UnifiedOrder() {
 	resp.Body.Read(body)
 	defer resp.Body.Close()
 
-	fmt.Println(string(body))
+	var orderResp UnifyOrderResp
+	xml.Unmarshal(body, &orderResp)
 
-}
+	returnMap = make(map[string]interface{}, 0)
+	returnMap["return_code"] = orderResp.Return_code
+	returnMap["return_msg"] = orderResp.Return_msg
+	returnMap["appid"] = orderResp.Appid
+	returnMap["mch_id"] = orderResp.Mch_id
+	returnMap["nonce_str"] = orderResp.Nonce_str
+	returnMap["sign"] = orderResp.Sign
+	returnMap["result_code"] = orderResp.Result_code
+	returnMap["prepay_id"] = orderResp.Prepay_id
+	returnMap["trade_type"] = orderResp.Trade_type
 
-func HttpWeiChatPay(w http.ResponseWriter, r *http.Request) {
+	return returnMap
+
 }
