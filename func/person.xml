@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<funcs>
+
+	<func id="200" name="selectUser" des="查询个人信息">
+
+		<job one="true">select id,nick,portrait,totalbuy,store,score from user where id = ${userid}</job>
+	</func>
+
+	<func id="201" name="selectAllOrders" des="查询全部订单">
+
+		<job>select orders.id,orders.money,orders.time,dicti.text,shopping.count,goods.`name`,goods.icon
+
+			from orders,dicti,shopping,goods
+			where
+			orders.userid = ${userid} and
+			dicti.dictid = 1 and
+			orders.state = dicti.`value` and
+			orders.id = shopping.orderid and
+			shopping.userid = orders.userid and
+			shopping.goodid = goods.id
+
+			order by time desc;
+		</job>
+	</func>
+
+	<func id="202" name="selectStateOrder" des="查询某个状态的订单">
+		<int name="state" must="true" />
+
+		<job>select orders.id,orders.money,orders.time,dicti.text,shopping.count,goods.`name`,goods.icon
+
+			from orders,dicti,shopping,goods
+			where
+			orders.userid = ${userid} and
+			orders.state = ${state} and
+			dicti.dictid = 1 and
+			orders.state = dicti.`value` and
+			orders.id = shopping.orderid and
+			shopping.userid = orders.userid and
+			shopping.goodid = goods.id
+
+			order by time desc;
+		</job>
+	</func>
+
+</funcs>

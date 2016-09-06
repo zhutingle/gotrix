@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<funcs>
+
+	<func id="300" name="paySuccess" des="支付成功" private="true">
+		<int name="orderid" must="true" />
+
+		<job>update orders set state = 2 where id = ${orderid}</job>
+
+		<!-- 一级分成 -->
+		<job result="pInfo" one="true">select user2.id,orders.money * discount.level1 money1,orders.money * discount.level2 money2,orders.money * discount.level3 money3
+			from user user1,user user2,orders,discount
+			where user1.id = orders.userid and orders.id = 11 and discount.id = 1 and user1.parent = user2.id
+		</job>
+		<job result="pId" test="NotEqual(${pInfo},null)">Json(${pInfo}, 'id')</job>
+		<job result="money1" test="NotEqual(${pInfo},null)">Json(${pInfo},'money1')</job>
+		<job test="NotEqual(${pId},null)">insert into recode(userid,orderid,level,score,state) values(${pId},${orderid},1,${money1},0)</job>
+
+		<!-- 二级分成 -->
+		<job result="ppInfo" test="NotEqual(${pId},null)" one="true">select user2.id from user user1, user user2 where user1.id = ${pId} and user1.parent = user2.id</job>
+		<job result="ppId" test="NotEqual(${ppInfo},null)">Json(${ppInfo},'id')</job>
+		<job result="money2" test="NotEqual(${pInfo},null)">Json(${pInfo},'money2')</job>
+		<job test="NotEqual(${ppId},null)">insert into recode(userid,orderid,level,score,state) values(${ppId},${orderid},2,${money2},0)</job>
+
+		<!-- 三级分成 -->
+		<job result="pppInfo" test="NotEqual(${ppId},null)" one="true">select user2.id from user user1,user user2 where user1.id = ${ppId} and user1.parent = user2.id</job>
+		<job result="pppId" test="NotEqual(${pppInfo},null)">Json(${pppInfo},'id')</job>
+		<job result="money3" test="NotEqual(${pInfo},null)">Json(${pInfo},'money3')</job>
+		<job test="NotEqual(${pppId},null)">insert into recode(userid,orderid,level,score,state) values(${pppId},${orderid},3,${money3},0)</job>
+
+		<job>JsonSet('success',true)</job>
+	</func>
+
+	<func id="301" name="payConfirm" des="收货并且经过退货期" private="true">
+		<int name="orderid" must="true" />
+
+		<job>update user,recode set recode.state = 1,user.score = user.score + recode.score where recode.orderid = ${orderid} and recode.state = 0 and recode.userid = user.id</job>
+	</func>
+
+	<func id="302" name="selectRecode" des="查询分成记录">
+		<int name="state" />
+
+		<job result="recodes" test="Equal(${state},null)">select recode.level,recode.score,recode.state,orders.money,orders.state orderstate,`user`.portrait from recode,orders,`user` where recode.userid = ${userid} and recode.orderid = orders.id and orders.userid = `user`.id limit 0,10</job>
+		<job result="recodes" test="NotEqual(${state},null)">select recode.level,recode.score,recode.state,orders.money,orders.state orderstate,`user`.portrait from recode,orders,`user` where recode.userid = ${userid} and recode.state = ${state} and recode.orderid = orders.id and orders.userid = `user`.id limit 0,10</job>
+		<job result="recodeLevel">select value,text from dicti where dictid = 5</job>
+		<job result="recodeState">select value,text from dicti where dictid = 6</job>
+		<job result="orderState">select value,text from dicti where dictid = 1</job>
+		<job>JsonSet('recodes',${recodes},'recodeLevel',${recodeLevel},'recodeState',${recodeState},'orderState',${orderState})</job>
+	</func>
+
+	<func id="303" name="exchangeScore" des="积分兑换红包">
+		<int name="score" must="true" val="0-999999999" />
+
+		<job result="info" one="true">select score >= ${score} more from user where id = ${userid}</job>
+		<job result="more">Json(${info},'more')</job>
+		<job>Equal(${more},0,'您的积分不够')</job>
+		<job>update score = score - ${score} where id = ${userid}</job>
+	</func>
+
+</funcs>

@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<funcs>
+
+	<func id="0" name="GetPass" des="从TOKEN中取pass" private="true">
+		<string name="token" must="true" len="64-64" />
+
+		<job result="userInfo" one="true">select * from user where token = ${token}</job>
+		<job>Json(${userInfo},'pass','key')</job>
+	</func>
+
+	<func id="1" name="GetSession" des="取Session的密码" private="true">
+		<string name="token" must="true" len="20-60" />
+
+		<job>hget('GOTRIX_SESSION',${token})</job>
+		<job>Json(${1},'id','pass')</job>
+	</func>
+
+	<func id="9" name="wechatLogin" des="在微信里自动登陆或注册" self="true">
+		<string name="code" must="true" />
+		<int name="parent" />
+		<string name="x" must="true" len="20-50" />
+		<string name="y" must="true" len="20-50" />
+
+		<job result="wechatReturn"><![CDATA[https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx32e598477c7d1ef8&secret=2fb49c36deeae54286a434be2777d387&code=${code}&grant_type=authorization_code]]></job>
+		<job result="openid">Json(${wechatReturn},'openid')</job>
+		<job>Equal(${openid},null,'微信登陆时出错，请稍后再试')</job>
+
+		<job result="userInfo" one="true">select id,session oldSession from user where openid = ${openid}</job>
+		<job result="oldSession" test="NotEqual(${userInfo},null,'')">Json(${userInfo},'oldSession')</job>
+		<job test="NotEqual(${oldSession},null,'')">hdel('GOTRIX_SESSION',${oldSession})</job>
+
+		<job result="id" test="NotEqual(${userInfo},null,'')">Json(${userInfo},'id')</job>
+		<job result="id" test="Equal(${userInfo},null,'')">insert into user(id,openid,parent) values(null,${openid},${parent})</job>
+
+		<job result="login">LoginIn(${x},${y},${id})</job>
+		<job result="session">Json(${login},'session')</job>
+		<job result="pass">Json(${login},'pass')</job>
+		<job result="json">JsonSet('id',${id},'session',${session},'pass',${pass})</job>
+		<job>update user set session = ${session} where id = ${id}</job>
+		<job>hset('GOTRIX_SESSION',${session},${json})</job>
+		<job>Json(${login},'session','x','y')</job>
+	</func>
+
+	<func id="10" name="GetSalt" des="获取密码的盐值">
+
+		<job one="true">select salt from user where token = ${token}</job>
+		<job>Json(${1},'salt')</job>
+	</func>
+
+	<func id="11" name="LoginIn" des="登陆">
+		<string name="token" must="true" len="64-64" />
+		<string name="x" must="true" len="20-50" />
+		<string name="y" must="true" len="20-50" />
+
+		<job result="userInfo" one="true">select id,session oldSession from user where token = ${token}</job>
+		<job result="oldSession">Json(${userInfo},'oldSession')</job>
+		<job>hdel('GOTRIX_SESSION',${oldSession})</job>
+
+		<job result="id">Json(${userInfo},'id')</job>
+		<job result="login">LoginIn(${x},${y},${id})</job>
+		<job result="session">Json(${login},'session')</job>
+		<job result="pass">Json(${login},'pass')</job>
+		<job result="json">JsonSet('id',${id},'session',${session},'pass',${pass})</job>
+		<job>update user set session = ${session} where id = ${id}</job>
+		<job>hset('GOTRIX_SESSION',${session},${json})</job>
+		<job>Json(${login},'session','x','y')</job>
+	</func>
+
+	<func id="12" name="LoginOut" des="登出">
+		<job>hdel('GOTRIX_SESSION',${token})</job>
+	</func>
+
+	<func id="13" name="register" des="用TOKEN来注册" self="true">
+		<string name="token" must="true" len="64-64" />
+		<string name="pass" must="true" len="20-32" />
+		<string name="salt" must="true" len="20-32" />
+		<string name="key" must="true" len="20-32" />
+		<string name="tel" len="0-20" />
+		<string name="nick" len="0-64" />
+		<string name="portrait" len="0-128" />
+		<int name="parent" />
+
+		<job one="true">select count(*) count from user where token = ${token}</job>
+		<job>Json(${1},'count')</job>
+		<job>Equal(${2},1,'账号已存在，可以直接登陆')</job>
+		<job>insert into user values(null,${tel},${nick},${portrait},${token},${pass},${salt},${key},${parent},null)</job>
+
+	</func>
+
+	<func id="14" name="mainPage" des="主页数据" self="true">
+		<int name="categoryid" />
+
+		<job result="list" test="Equal(${categoryid},null)">select id,main,des,price from goods where main is not null</job>
+		<job result="list" test="NotEqual(${categoryid},null)">select id,main,des,price from goods where main is not null and categoryid = ${categoryid}</job>
+		<job>JsonSet('list',${list})</job>
+	</func>
+
+	<func id="15" name="getGood" des="获取某个产品的详情" self="true">
+
+		<job one="true">select * from goods where id = ${id}</job>
+	</func>
+
+	<func id="16" name="insertShopping" des="添加到购物车">
+		<int name="goodid" must="true" />
+		<int name="goodtype" />
+
+		<job result="shopping" one="true">select id from shopping where userid = ${userid} and goodid = ${goodid} and orderid is null</job>
+		<job test="NotEqual(${shopping},null,'')">Json(${shopping},'id')</job>
+		<job test="Equal(${shopping},null,'')">insert into shopping values(null,${userid},${goodid},${goodtype},1,null,now())</job>
+
+	</func>
+
+	<func id="17" name="selectShopping" des="查询用户购物车">
+
+		<job>select shopping.id,count,icon,name,price,shopping.time from shopping,goods where userid = ${userid} and goodid = goods.id and orderid is null order by shopping.time</job>
+	</func>
+
+	<func id="18" name="deleteShopping" des="删除购物车中的某个商品">
+		<int name="shoppingid" must="true" />
+
+		<job>delete from shopping where userid = ${userid} and id = ${shoppingid}</job>
+	</func>
+
+	<func id="19" name="updateShoppingCount" des="修改订单的数量">
+		<int name="shoppingid" must="true" />
+		<int name="count" must="true" />
+
+		<job>update shopping set count = ${count} where userid = ${userid} and id = ${shoppingid}</job>
+	</func>
+
+	<func id="20" name="insertOrder" des="生成订单">
+		<array name="shoppingids" must="true" />
+
+		<job result="orderid">insert into orders(id,userid,state,time) values(null,${userid},1,now())</job>
+		<job result="shoppingcount">update shopping set orderid = ${orderid} where userid = ${userid} and id in (${shoppingids})</job>
+		<job>JsonSet('orderid',${orderid},'shoppingcount',${shoppingcount})</job>
+	</func>
+
+	<func id="21" name="selectOrder" des="查询订单">
+		<int name="orderid" must="true" />
+
+		<job result="order" one="true">select * from orders where userid = ${userid} and id = ${orderid}</job>
+		<job result="shoppings">select goods.name,goods.icon,goods.price,shopping.count from shopping,goods where userid = ${userid} and orderid = ${orderid} and goodid = goods.id</job>
+		<job result="address" one="true">select address.* from address,`user` where userid = ${userid} and userid = `user`.id and address.id = `user`.address</job>
+		<job>JsonSet('order',${order},'shoppings',${shoppings},'address',${address})</job>
+	</func>
+
+	<func id="22" name="selectAddress" des="查询地址">
+
+		<job result="address">select * from address where userid = ${userid} order by time desc</job>
+		<job result="default" one="true">select address from user where id = ${userid}</job>
+		<job>JsonSet('address',${address},'default',${default})</job>
+	</func>
+
+	<func id="23" name="insertAddress" des="新增地址">
+		<string name="tel" must="true" len="0-20" />
+		<string name="name" must="true" len="0-20" />
+		<string name="detail" must="true" len="0-128" />
+		<int name="zipcode" val="0-999999" />
+
+		<job result="data" one="true"><![CDATA[select count(id) < 10 count from address where userid = ${userid}]]></job>
+		<job result="count">Json(${data},'count')</job>
+		<job>Equal(${count},0,'亲，最多只能添加十个地址哦。')</job>
+		<job>insert into address(id,tel,name,detail,zipcode,userid,time) values(null,${tel},${name},${detail},${zipcode},${userid},now())</job>
+	</func>
+
+	<func id="24" name="selectAddressById" des="根据ID查找地址">
+		<int name="id" must="true" />
+
+		<job one="true">select * from address where userid = ${userid} and id = ${id}</job>
+	</func>
+
+	<func id="25" name="updateAddress" des="修改地址">
+		<int name="id" must="true" />
+		<string name="tel" must="true" len="0-20" />
+		<string name="name" must="true" len="0-20" />
+		<string name="detail" must="true" len="0-128" />
+		<int name="zipcode" val="0-999999" />
+		<int name="default" />
+
+		<job>update address set tel = ${tel},name = ${name},detail = ${detail},zipcode = ${zipcode},time = now() where userid = ${userid} and id = ${id}</job>
+	</func>
+
+	<func id="26" name="provinceAndCity" des="各省市数据" self="true">
+
+		<job result="province">select * from dicti where dictid = (select id from dict where name = 'PROVINCE_NAME')</job>
+		<job result="city">select * from dicti where dictid = (select id from dict where name = 'CITY_NAME')</job>
+		<job>JsonSet('province',${province},'city',${city})</job>
+	</func>
+
+	<func id="27" name="setDefaultAddress" des="设置默认地址">
+		<int name="addressid" must="true" />
+
+		<job>update user set address = ${addressid} where id = ${userid}</job>
+	</func>
+
+	<func id="28" name="updateOrder" des="修改订单的地址">
+		<int name="id" must="true" />
+		<string name="tel" must="true" len="0-20" />
+		<string name="name" must="true" len="0-20" />
+		<string name="detail" must="true" len="0-128" />
+		<int name="zipcode" val="0-999999" />
+
+		<job>update orders set name = ${name},tel = ${tel},detail = ${detail},zipcode = ${zipcode} where userid = ${userid} and id = ${id}</job>
+	</func>
+
+	<func id="29" name="countOrder" des="计算订单价格并自动写入">
+		<int name="id" must="true" />
+
+		<job>update orders set money = (select sum(count*price) from shopping,goods where shopping.goodid = goods.id and shopping.userid = ${userid} and shopping.orderid = ${id}) where userid = ${userid} and id = ${id};</job>
+	</func>
+
+</funcs>

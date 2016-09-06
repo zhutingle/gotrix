@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<funcs>
+
+	<func id="100" name="selectStore" des="查询自己的店铺">
+
+		<job result="user" one="true">select nick,portrait,total,store from user where id = ${userid}</job>
+		<!-- <int name="dictid" /> -->
+		<!-- <int name="value" /> -->
+		<!-- <string name="text" /> -->
+		<!-- <string name="des" /> -->
+		<!-- <job>insert into dicti(dictid,value,text,des) values(${dictid},${value},${text},${des})</job> -->
+	</func>
+
+	<func id="101" name="addStore" des="开店">
+		<string name="code" must="true" />
+
+		<job result="user" one="true">select store from user where id = ${userid}</job>
+		<job result="store">Json(${user},'store')</job>
+		<job>Equal(${store},1,'您的店铺已经开立成功，不能重复开店')</job>
+
+		<job result="wechatReturn"><![CDATA[https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx32e598477c7d1ef8&secret=2fb49c36deeae54286a434be2777d387&code=${code}&grant_type=authorization_code]]></job>
+		<job result="access_token">Json(${wechatReturn},'access_token')</job>
+		<job result="refresh_token">Json(${wechatReturn},'refresh_token')</job>
+		<job result="openid">Json(${wechatReturn},'openid')</job>
+		<job>Equal(${openid},null,'微信登陆时出错，请稍后再试')</job>
+
+		<job result="userInfo"><![CDATA[https://api.weixin.qq.com/sns/userinfo?access_token=${access_token}&openid=${openid}&lang=zh_CN]]></job>
+		<job result="nickname">Json(${userInfo},'nickname')</job>
+		<job result="headimgurl">Json(${userInfo},'headimgurl')</job>
+		<job result="country">Json(${userInfo},'country')</job>
+		<job result="province">Json(${userInfo},'province')</job>
+		<job result="city">Json(${userInfo},'city')</job>
+		<job result="sex">Json(${userInfo},'sex')</job>
+		<job>Equal(${nickname},null,'微信登陆时出错，请稍后再试。')</job>
+
+		<job>update user set nick=${nickname},portrait=${headimgurl},sex=${sex},country=${country},province=${province},city=${city},total=0,store=1 where id = ${userid}</job>
+	</func>
+
+	<func id="102" name="selectSubStore" des="查询自己的下级店铺">
+
+		<job>select nick,portrait,total from user where parent = ${userid}</job>
+	</func>
+
+	<func id="103" name="selectSubSubStore" des="查询自己的下下级店铺">
+
+		<job>select nick,portrait,total from user where parent in(select id from user where parent = ${userid})</job>
+	</func>
+
+</funcs>
