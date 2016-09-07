@@ -22,8 +22,6 @@
 		<job result="Nonce_str">RandString(32)</job>
 		<job result="weichatParam">JsonSet('appid',${Appid},'mch_id',${Mch_id},'notify_url',${Notify_url},'trade_type',${Trade_type},'nonce_str',${Nonce_str},'body',${body},'total_fee',${total_fee},'out_trade_no',${orderId},'openid',${openid},'out_trade_no',${orderno},'spbill_create_ip',${_ip})</job>
 
-		<job>JsonSet(${weichatParam},'spbill_create_ip','58.60.168.140')</job>
-
 		<!-- 对参数进行签名 -->
 		<job result="Key">Config('Key')</job>
 		<job result="sign">WeichatSign(${weichatParam},${Key})</job>
@@ -51,7 +49,18 @@
 
 		<!-- 将参数写入到页面并返回 -->
 		<job result="htmlParamString">JsonToString(${htmlParam})</job>
-		<job result="returnHtml">Format('<html><head><title>正在进行微信支付...</title></head><body><script type="text/javascript">function onBridgeReady() {WeixinJSBridge.invoke("getBrandWCPayRequest", %v, function(res) {if (res.err_msg == "get_brand_wcpay_request：ok") {alert("支付成功：" + res.err_msg);}else {alert(JSON.stringify(res));}});}if (typeof WeixinJSBridge == "undefined") {if (document.addEventListener) {document.addEventListener("WeixinJSBridgeReady", onBridgeReady, false);}else if (document.attachEvent) {document.attachEvent("WeixinJSBridgeReady",onBridgeReady);document.attachEvent("onWeixinJSBridgeReady", onBridgeReady);}} else {onBridgeReady();}</script></body></html>',${htmlParamString})</job>
+		<job result="returnHtml">
+			Format('
+			<html>
+				<head>
+					<title>正在进行微信支付...</title>
+				</head>
+				<body>
+					<script type="text/javascript">function onBridgeReady() {WeixinJSBridge.invoke("getBrandWCPayRequest", %v, function(res) {if (res.err_msg == "get_brand_wcpay_request：ok") {alert("支付成功：" + res.err_msg);}else {alert(JSON.stringify(res));}});}if (typeof WeixinJSBridge == "undefined") {if (document.addEventListener) {document.addEventListener("WeixinJSBridgeReady", onBridgeReady, false);}else if (document.attachEvent) {document.attachEvent("WeixinJSBridgeReady",onBridgeReady);document.attachEvent("onWeixinJSBridgeReady", onBridgeReady);}} else {onBridgeReady();}</script>
+				</body>
+			</html>
+			',${htmlParamString})
+		</job>
 		<job>Return(${returnHtml})</job>
 	</func>
 
