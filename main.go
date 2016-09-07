@@ -16,6 +16,7 @@ import (
 	"github.com/zhutingle/gotrix/checker"
 	"github.com/zhutingle/gotrix/global"
 	"github.com/zhutingle/gotrix/handler"
+	"github.com/zhutingle/gotrix/weichat"
 )
 
 func main() {
@@ -68,6 +69,7 @@ func GotrixServer() {
 	gotrixHandler.Init()
 
 	http.HandleFunc("/gotrix/", serverHandler)
+	http.HandleFunc("/gotrix/wxpay.action", wxpayCallback)
 	http.Handle("/", http.FileServer(http.Dir("src/github.com/zhutingle/gotrix/static")))
 
 	err = http.ListenAndServe(":9080", nil)
@@ -143,4 +145,20 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 	logBuffer.WriteRune('\n')
 	log.Println(logBuffer.String())
 
+}
+
+func wxpayCallback(w http.ResponseWriter, r *http.Request) {
+	checkedParams := &global.CheckedParams{Func: 1001, V: make(map[string]interface{}, 0)}
+	weichat, err := weichat.WxpayCallback(w, r)
+	if err != nil {
+		fmt.Println(err)
+	}
+	checkedParams.V["weichat"] = weichat
+	fmt.Println(checkedParams.V)
+	response, gErr := gotrixHandler.Handle(checkedParams)
+	if gErr != nil {
+		writeError(w, gErr)
+	} else {
+		writeError(w, &global.GotrixError{Status: 0, Msg: fmt.Sprintf("%v", response)})
+	}
 }
