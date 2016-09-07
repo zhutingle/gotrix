@@ -49,18 +49,7 @@
 
 		<!-- 将参数写入到页面并返回 -->
 		<job result="htmlParamString">JsonToString(${htmlParam})</job>
-		<job result="returnHtml">
-			Format('
-			<html>
-				<head>
-					<title>正在进行微信支付...</title>
-				</head>
-				<body>
-					<script type="text/javascript">function onBridgeReady() {WeixinJSBridge.invoke("getBrandWCPayRequest", %v, function(res) {if (res.err_msg == "get_brand_wcpay_request：ok") {alert("支付成功：" + res.err_msg);}else {alert(JSON.stringify(res));}});}if (typeof WeixinJSBridge == "undefined") {if (document.addEventListener) {document.addEventListener("WeixinJSBridgeReady", onBridgeReady, false);}else if (document.attachEvent) {document.attachEvent("WeixinJSBridgeReady",onBridgeReady);document.attachEvent("onWeixinJSBridgeReady", onBridgeReady);}} else {onBridgeReady();}</script>
-				</body>
-			</html>
-			',${htmlParamString})
-		</job>
+		<job result="returnHtml">Format('<html><head><title>正在进行微信支付...</title></head><body><script type="text/javascript">function onBridgeReady() {WeixinJSBridge.invoke("getBrandWCPayRequest", %v, function(res) {if (res.err_msg == "get_brand_wcpay_request：ok") {alert("支付成功：" + res.err_msg);}else {alert(JSON.stringify(res));}});}if (typeof WeixinJSBridge == "undefined") {if (document.addEventListener) {document.addEventListener("WeixinJSBridgeReady", onBridgeReady, false);}else if (document.attachEvent) {document.attachEvent("WeixinJSBridgeReady",onBridgeReady);document.attachEvent("onWeixinJSBridgeReady", onBridgeReady);}} else {onBridgeReady();}</script></body></html>',${htmlParamString})</job>
 		<job>Return(${returnHtml})</job>
 	</func>
 
