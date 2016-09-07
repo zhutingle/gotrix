@@ -90,8 +90,8 @@
 	<func id="14" name="mainPage" des="主页数据" self="true">
 		<int name="categoryid" />
 
-		<job result="list" test="Equal(${categoryid},null)">select id,main,des,price from goods where main is not null</job>
-		<job result="list" test="NotEqual(${categoryid},null)">select id,main,des,price from goods where main is not null and categoryid = ${categoryid}</job>
+		<job result="list" test="Equal(${categoryid},null)">select id,main,name,price from goods where main is not null</job>
+		<job result="list" test="NotEqual(${categoryid},null)">select id,main,name,price from goods where main is not null and categoryid = ${categoryid}</job>
 		<job>JsonSet('list',${list})</job>
 	</func>
 
