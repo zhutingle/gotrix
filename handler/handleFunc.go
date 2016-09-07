@@ -3,6 +3,7 @@ package handler
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"reflect"
@@ -247,5 +248,40 @@ func (this *handleFunc) WeichatPay(args []interface{}) (response interface{}, gE
 
 	response = weichat.UnifiedOrder(orderReq)
 
+	return
+}
+
+func (this *handleFunc) TimeStampSecond(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	response = time.Now().Unix()
+	return
+}
+
+func (this *handleFunc) StringAdd(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	var str string = ""
+	for i, length := 0, len(args); i < length; i++ {
+		str += fmt.Sprintf("%v", args[i])
+	}
+	response = str
+	return
+}
+
+func (this *handleFunc) JsonToString(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	bs, err := json.Marshal(args[0])
+	if err != nil {
+		gErr = global.JSON_TO_STRING_ERROR
+		return
+	}
+	response = string(bs)
+	return
+}
+
+func (this *handleFunc) Format(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	format := args[0].(string)
+	response = fmt.Sprintf(format, args[1:]...)
+	return
+}
+
+func (this *handleFunc) Return(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	gErr = &global.GotrixError{Status: 0, Msg: args[0].(string)}
 	return
 }

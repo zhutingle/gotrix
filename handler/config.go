@@ -145,6 +145,7 @@ func readXmlFolder(folder string) {
 			if flag {
 				v.Jobs[j].Job = cdataExp.FindAllStringSubmatch(v.Jobs[j].Job, -1)[0][1]
 			}
+			strings.TrimSpace(v.Jobs[j].Job)
 		}
 
 		// 解析Job标签，并给不同的Job标签添加不同的处理器
