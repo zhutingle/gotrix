@@ -8,7 +8,7 @@
 		<string name="remark" len="0-100" />
 
 		<!-- 第一步：计算总价格，并写入订单表中 -->
-		<job result="orderno">RandOrderNo(${orderId})</job>
+		<job result="orderno">RandOrderNo(${orderId},5)</job>
 		<job>update orders set remark = ${remark},orderno = ${orderno},money = (select sum(count*price) from shopping,goods where shopping.goodid = goods.id and shopping.userid = ${userid} and shopping.orderid = ${orderId}) where userid = ${userid} and id = ${orderId}</job>
 
 		<!-- 构建统一下单接口所需参数 -->
@@ -94,6 +94,42 @@
 		<job test="NotEqual(${pppId},null)">insert into recode(userid,orderid,level,score,state) values(${pppId},${orderid},3,${money3},0)</job>
 
 		<job><![CDATA[Return('<xml><return_code>SUCCESS</return_code><return_msg>OK</return_msg></xml>')]]></job>
+	</func>
+
+	<func id="1002" name="recodeToMoney" des="积分兑换红包">
+		<int name="score" must="true" val="100-20000" />
+
+		<!-- 判断用户的积分是否足够本次兑换 -->
+		<job result="userInfo" one="true">select (score >= ${score}) as canChange,openid,nick from user where id = ${userid}</job>
+		<job result="canChange">Json(${userInfo},'canChange')</job>
+		<job>NotEqual(${canChange},1,'您的积分不足')</job>
+
+		<!-- 插入用户兑换记录，暂时先将记录设置为未成功 -->
+		<job result="exchangeId">insert into exchange(id,userid,score,time,state) values(null,${userid},${score},now(),0)</job>
+
+		<!-- 组装微信红包所需参数并签名 -->
+		<job result="wxappid">Config('Appid')</job>
+		<job result="mch_id">Config('Mch_id')</job>
+		<job result="nonce_str">RandString(32)</job>
+		<job result="re_openid">Json(${userInfo},'openid')</job>
+		<job result="nick">Json(${userInfo},'nick')</job>
+		<job result="tempExchangeId">RandOrderNo(${exchangeId},10)</job>
+		<job result="mch_billno">StringAdd(${mch_id},${tempExchangeId})</job>
+		<job result="exchangeParam">JsonSet('wxappid',${wxappid},'mch_id',${mch_id},'nonce_str',${nonce_str},'send_name','和风坊','re_openid',${re_openid},'total_num','1','total_amount',${score},'wishing','感谢您对和风坊的支持！','client_ip',${_ip},'act_name','积分兑换红包','remark',${nick},'mch_billno',${mch_billno})</job>
+		<job result="Key">Config('Key')</job>
+		<job result="sign">WeichatSign(${exchangeParam},${Key})</job>
+		<job>JsonSet(${exchangeParam},'sign',${sign})</job>
+
+		<!-- 向微信服务器请求发红包接口 -->
+		<job result="exchangeResult">WxSendRedPack(${exchangeParam})</job>
+
+		<!-- 判断接口返回的结果是否正确 -->
+		<job result="return_code">Json(${exchangeResult},'return_code')</job>
+		<job result="return_msg">Json(${exchangeResult},'return_msg')</job>
+		<job>NotEqual(${return_code},'SUCCESS',${return_msg})</job>
+
+		<!-- 数据更新 -->
+		<job>update user,exchange set user.score = user.score - ${score}, exchange.state = 1 where user.id = ${userid} and user.id = exchange.userid and exchange.id = ${exchangeId}</job>
 	</func>
 
 </funcs>

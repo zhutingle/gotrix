@@ -2,11 +2,16 @@ package weichat
 
 import (
 	"bytes"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"regexp"
 	"strings"
+
+	"github.com/zhutingle/gotrix/global"
 )
 
 type UnifyOrderReq struct {
@@ -151,26 +156,80 @@ func WxpayCallback(w http.ResponseWriter, r *http.Request) (returnMap map[string
 
 	return reqMap, nil
 
-	//	var resp WXPayNotifyResp
-	//进行签名校验
-	//	if wxpayVerifySign(reqMap, mr.Sign) {
-	//这里就可以更新我们的后台数据库了，其他业务逻辑同理。
-	//		resp.Return_code = "SUCCESS"
-	//		resp.Return_msg = "OK"
-	//	} else {
-	//		resp.Return_code = "FAIL"
-	//		resp.Return_msg = "failed to verify sign, please retry!"
-	//	}
+}
 
-	//结果返回，微信要求如果成功需要返回return_code "SUCCESS"
-	//	bytes, _err := xml.Marshal(resp)
-	//	strResp := strings.Replace(string(bytes), "WXPayNotifyResp", "xml", -1)
-	//	if _err != nil {
-	//		fmt.Println("xml编码失败，原因：", _err)
-	//		http.Error(w.(http.ResponseWriter), http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-	//		return
-	//	}
-	//
-	//	w.(http.ResponseWriter).WriteHeader(http.StatusOK)
-	//	fmt.Fprint(w.(http.ResponseWriter), strResp)
+var _tlsConfig *tls.Config
+
+func WxSendRedPack(param map[string]interface{}) (returnMap map[string]interface{}) {
+
+	if _tlsConfig == nil {
+
+		cert, err := tls.LoadX509KeyPair(global.Config.WxCert.Cert_pem, global.Config.WxCert.Key_pem)
+		if err != nil {
+			fmt.Println("load wechat keys fail", err)
+			return nil
+		}
+
+		cData, err := ioutil.ReadFile(global.Config.WxCert.RootCA_Path)
+		if err != nil {
+			fmt.Println("read wechat ca fail", err)
+			return nil
+		}
+
+		pool := x509.NewCertPool()
+		pool.AppendCertsFromPEM(cData)
+		_tlsConfig = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      pool,
+		}
+	}
+
+	if _tlsConfig == nil {
+		return
+	}
+
+	bytes_req := toXmlBytes(param)
+
+	tr := &http.Transport{TLSClientConfig: _tlsConfig}
+	client := &http.Client{Transport: tr}
+	resp, _err := client.Post(
+		"https://api.mch.weixin.qq.com/mmpaymkttransfers/sendredpack",
+		"text/xml",
+		bytes.NewBuffer(bytes_req))
+
+	if _err != nil {
+		fmt.Println("请求微信发放普通红包接口发生错误，原因：", _err)
+		return
+	}
+
+	length := resp.ContentLength
+	body := make([]byte, length)
+	resp.Body.Read(body)
+	defer resp.Body.Close()
+
+	returnMap = fromXmlBytes(body)
+
+	return
+}
+
+func toXmlBytes(param map[string]interface{}) (xmlBytes []byte) {
+	buffer := bytes.Buffer{}
+	buffer.WriteString("<xml>")
+	for key, value := range param {
+		buffer.WriteString(fmt.Sprintf("<%s>%v</%s>", key, value, key))
+	}
+	buffer.WriteString("</xml>")
+	return buffer.Bytes()
+}
+
+func fromXmlBytes(xmlBytes []byte) (result map[string]interface{}) {
+
+	xmlReg := regexp.MustCompile("<(\\w*)><\\!\\[CDATA\\[(.*?)\\]\\]></\\w*>")
+	allSub := xmlReg.FindAllSubmatch(xmlBytes, -1)
+	result = make(map[string]interface{}, 0)
+	for i := 0; i < len(allSub); i++ {
+		result[string(allSub[i][1])] = string(allSub[i][2])
+	}
+
+	return
 }

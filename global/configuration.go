@@ -36,6 +36,7 @@ type Configuration struct {
 	LogFile  string
 	Redis    Redis
 	Database Database
+	WxCert   WxCert
 	V        []V
 	M        map[string]interface{}
 }
@@ -55,6 +56,12 @@ type Database struct {
 	Pass         string
 	MaxOpenConns int
 	MaxIdleConns int
+}
+
+type WxCert struct {
+	Cert_pem    string
+	Key_pem     string
+	RootCA_Path string
 }
 
 type V struct {

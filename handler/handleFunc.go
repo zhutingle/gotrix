@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"math"
 	"math/rand"
 	"reflect"
 	"sort"
@@ -184,12 +185,18 @@ func (this *handleFunc) RandString(args []interface{}) (response interface{}, gE
 }
 
 func (this *handleFunc) RandOrderNo(args []interface{}) (response interface{}, gErr *global.GotrixError) {
-	orderId := int64(args[0].(float64))
+	orderId := int64(0)
+	if _, b := args[0].(float64); b {
+		orderId = int64(args[0].(float64))
+	} else if _, b := args[0].(int64); b {
+		orderId = args[0].(int64)
+	}
+	e := int(args[1].(int64))
 
 	nowTime := time.Now()
 	year, month, day := nowTime.Date()
 	orderNo := int64(year*10000 + int(month)*100 + day)
-	orderNo = orderNo*100000 + orderId
+	orderNo = orderNo*int64(math.Pow10(e)) + orderId
 	response = strconv.FormatInt(orderNo, 10)
 
 	return
@@ -283,5 +290,10 @@ func (this *handleFunc) Format(args []interface{}) (response interface{}, gErr *
 
 func (this *handleFunc) Return(args []interface{}) (response interface{}, gErr *global.GotrixError) {
 	gErr = &global.GotrixError{Status: 0, Msg: args[0].(string)}
+	return
+}
+
+func (this *handleFunc) WxSendRedPack(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	response = weichat.WxSendRedPack(args[0].(map[string]interface{}))
 	return
 }
