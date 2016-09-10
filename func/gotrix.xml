@@ -102,23 +102,24 @@
 
 	<func id="16" name="insertShopping" des="添加到购物车">
 		<int name="goodid" must="true" />
-		<int name="goodtype" />
+		<int name="count" />
+		<string name="attach" />
 
 		<job result="shopping" one="true">select id from shopping where userid = ${userid} and goodid = ${goodid} and orderid is null</job>
-		<job test="NotEqual(${shopping},null,'')">Json(${shopping},'id')</job>
-		<job test="Equal(${shopping},null,'')">insert into shopping values(null,${userid},${goodid},${goodtype},1,null,now())</job>
+		<job test="NotEqual(${shopping},null)">Json(${shopping},'id')</job>
+		<job test="Equal(${shopping},null)">insert into shopping values(null,${userid},${goodid},${attach},${count},null,now())</job>
 
 	</func>
 
 	<func id="17" name="selectShopping" des="查询用户购物车">
 
-		<job>select shopping.id,count,icon,name,price,shopping.time from shopping,goods where userid = ${userid} and goodid = goods.id and orderid is null order by shopping.time</job>
+		<job>select shopping.id,shopping.attach,count,icon,name,price,shopping.time from shopping,goods where userid = ${userid} and goodid = goods.id and orderid is null order by shopping.time</job>
 	</func>
 
 	<func id="18" name="deleteShopping" des="删除购物车中的某个商品">
 		<int name="shoppingid" must="true" />
 
-		<job>delete from shopping where userid = ${userid} and id = ${shoppingid}</job>
+		<job>delete from shopping where userid = ${userid} and id = ${shoppingid} and orderid is null</job>
 	</func>
 
 	<func id="19" name="updateShoppingCount" des="修改订单的数量">
@@ -140,7 +141,7 @@
 		<int name="orderid" must="true" />
 
 		<job result="order" one="true">select * from orders where userid = ${userid} and id = ${orderid}</job>
-		<job result="shoppings">select goods.name,goods.icon,goods.price,shopping.count from shopping,goods where userid = ${userid} and orderid = ${orderid} and goodid = goods.id</job>
+		<job result="shoppings">select goods.name,goods.icon,goods.price,shopping.attach,shopping.count from shopping,goods where userid = ${userid} and orderid = ${orderid} and goodid = goods.id</job>
 		<job result="address" one="true">select address.* from address,`user` where userid = ${userid} and userid = `user`.id and address.id = `user`.address</job>
 		<job>JsonSet('order',${order},'shoppings',${shoppings},'address',${address})</job>
 	</func>
