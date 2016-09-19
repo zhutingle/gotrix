@@ -259,7 +259,8 @@ func (this *handleFunc) WeichatPay(args []interface{}) (response interface{}, gE
 }
 
 func (this *handleFunc) TimeStampSecond(args []interface{}) (response interface{}, gErr *global.GotrixError) {
-	response = time.Now().Unix()
+	timeStampSecond := time.Now().Unix()
+	response = strconv.FormatInt(timeStampSecond, 10)
 	return
 }
 
