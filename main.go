@@ -21,6 +21,14 @@ import (
 
 func main() {
 
+	//	gotrixHandler = handler.SimpleHandler{}
+	//	gotrixHandler.Init()
+	//
+	//	checkedParams := &global.CheckedParams{Func: 1004, V: make(map[string]interface{})}
+	//	response, err := gotrixHandler.Handle(checkedParams)
+	//	log.Println(response)
+	//	log.Println(err)
+
 	if len(os.Args) > 1 {
 		GotrixServer()
 	} else {

@@ -50,7 +50,7 @@
 
 		<!-- 将参数写入到页面并返回 -->
 		<job result="htmlParamString">JsonToString(${htmlParam})</job>
-		<job result="returnHtml"><![CDATA[Format('<html><head><title>正在进行微信支付...</title></head><body><script type="text/javascript">function onBridgeReady() {WeixinJSBridge.invoke("getBrandWCPayRequest", %v, function(res) {if (res.err_msg == "get_brand_wcpay_request：ok") {alert("支付成功");history.back();} else {alert("支付失败");history.back();}});}if (typeof WeixinJSBridge == "undefined") {if (document.addEventListener) {document.addEventListener("WeixinJSBridgeReady", onBridgeReady, false);}else if (document.attachEvent) {document.attachEvent("WeixinJSBridgeReady",onBridgeReady);document.attachEvent("onWeixinJSBridgeReady", onBridgeReady);}} else {onBridgeReady();}</script></body></html>',${htmlParamString})]]></job>
+		<job result="returnHtml"><![CDATA[Format('<html><head><title>正在进行微信支付...</title></head><body><script type="text/javascript">function onBridgeReady() {WeixinJSBridge.invoke("getBrandWCPayRequest", %v, function(res) {if (res.err_msg == "get_brand_wcpay_request：ok") {history.back();} else {history.back();}});}if (typeof WeixinJSBridge == "undefined") {if (document.addEventListener) {document.addEventListener("WeixinJSBridgeReady", onBridgeReady, false);}else if (document.attachEvent) {document.attachEvent("WeixinJSBridgeReady",onBridgeReady);document.attachEvent("onWeixinJSBridgeReady", onBridgeReady);}} else {onBridgeReady();}</script></body></html>',${htmlParamString})]]></job>
 		<job>Return(${returnHtml})</job>
 	</func>
 
@@ -142,6 +142,21 @@
 		<job result="exchangeState">select value,text from dicti where dictid = 7</job>
 		<job result="exchange">select user.nick,user.portrait,exchange.time,exchange.score,exchange.state from user,exchange where user.id = ${userid} and user.id = exchange.userid order by exchange.time desc limit 0,10</job>
 		<job>JsonSet('exchange',${exchange},'exchangeState',${exchangeState})</job>
+	</func>
+
+	<func id="1004" name="exportOrders" des="导出订单记录并自动发送邮箱" private="true" cron="0 0 17 * * *">
+
+		<job result="orderData">select orders.id,orders.name,orders.tel,orders.detail,
+			GROUP_CONCAT(CONCAT(goods.name,IF(ISNULL(shopping.attach),'',CONCAT('(',shopping.attach,')')),' X',shopping.count) SEPARATOR ';') goods,
+			orders.orderno
+			from orders,shopping,goods
+			where orders.state = 2 and orders.id = shopping.orderid and shopping.goodid = goods.id group by orders.id
+		</job>
+		<job result="maxId">Max(${orderData},'id')</job>
+		<job result="fileName">TimeFormat('20060102')</job>
+		<job>ToXls(${orderData},'id,name,tel,detail,goods,orderno',${fileName})</job>
+		<job>JsonSet('maxId',${maxId})</job>
+		<job><![CDATA[update orders set state = 3 where state = 2 and id <= ${maxId}]]></job>
 	</func>
 
 </funcs>

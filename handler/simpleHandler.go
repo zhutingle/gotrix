@@ -5,10 +5,12 @@ import (
 	"log"
 	"strconv"
 
+	"github.com/robfig/cron"
 	"github.com/zhutingle/gotrix/global"
 )
 
 type SimpleHandler struct {
+	cronManager *cron.Cron
 }
 
 type handle interface {
@@ -18,6 +20,8 @@ type handle interface {
 func (this SimpleHandler) Init() {
 
 	readXmlFolder("src/github.com/zhutingle/gotrix/func")
+
+	this.cronTask()
 
 }
 

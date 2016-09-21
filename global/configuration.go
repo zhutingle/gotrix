@@ -33,12 +33,13 @@ func init() {
 var Config Configuration
 
 type Configuration struct {
-	LogFile  string
-	Redis    Redis
-	Database Database
-	WxCert   WxCert
-	V        []V
-	M        map[string]interface{}
+	LogFile    string
+	TempFolder string
+	Redis      Redis
+	Database   Database
+	WxCert     WxCert
+	V          []V
+	M          map[string]interface{}
 }
 
 type Redis struct {

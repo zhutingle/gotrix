@@ -34,6 +34,7 @@ type Func struct {
 	Des     string  `xml:"des,attr"`
 	Private bool    `xml:"private,attr"`
 	Self    bool    `xml:"self,attr"`
+	Cron    string  `xml:"cron,attr"`
 	Jobs    []Job   `xml:"job"`
 	Param   []Param `xml:",any"`
 }

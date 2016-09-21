@@ -16,6 +16,8 @@ import (
 	"github.com/zhutingle/gotrix/ecdh"
 	"github.com/zhutingle/gotrix/global"
 	"github.com/zhutingle/gotrix/weichat"
+
+	"github.com/tealeg/xlsx"
 )
 
 type handleFunc struct {
@@ -296,5 +298,68 @@ func (this *handleFunc) Return(args []interface{}) (response interface{}, gErr *
 
 func (this *handleFunc) WxSendRedPack(args []interface{}) (response interface{}, gErr *global.GotrixError) {
 	response = weichat.WxSendRedPack(args[0].(map[string]interface{}))
+	return
+}
+
+func (this *handleFunc) TimeFormat(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	layout := args[0].(string)
+	response = time.Now().Format(layout)
+	return
+}
+
+func (this *handleFunc) Max(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	data := args[0].([]interface{})
+	column := args[1].(string)
+
+	var max int64 = math.MinInt64
+	for i := 0; i < len(data); i++ {
+		d := data[i].(map[string]interface{})
+		v := d[column].(int64)
+		if max < v {
+			max = v
+		}
+	}
+	response = max
+	return
+}
+
+func (this *handleFunc) ToXls(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	data := args[0].([]interface{})
+	columnStr := args[1].(string)
+	fileName := args[2].(string)
+
+	var file *xlsx.File
+	var sheet *xlsx.Sheet
+	var row *xlsx.Row
+	var cell *xlsx.Cell
+	var err error
+
+	file = xlsx.NewFile()
+	sheet, err = file.AddSheet(fileName)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	columns := strings.Split(columnStr, ",")
+	row = sheet.AddRow()
+	for i := 0; i < len(columns); i++ {
+		cell = row.AddCell()
+		cell.SetValue(columns[i])
+	}
+
+	for i := 0; i < len(data); i++ {
+		row = sheet.AddRow()
+		var d = data[i].(map[string]interface{})
+		for j := 0; j < len(columns); j++ {
+			cell = row.AddCell()
+			cell.SetValue(d[columns[j]])
+		}
+	}
+
+	err = file.Save(global.Config.TempFolder + fileName + ".xlsx")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
 	return
 }
