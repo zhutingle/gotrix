@@ -18,7 +18,7 @@ var argsReg *regexp.Regexp = regexp.MustCompile("((true)|(false)|(null)|(-?\\d+)
 var sqlArgsReg *regexp.Regexp = regexp.MustCompile("\\$\\{\\w+\\}")
 
 var pHandleHttp handle = &handleHttp{}
-var pHandleFunc handle = &handleFunc{}
+var pHandleFunc handle = (&handleFunc{}).init()
 var pHandleRedis handle = (&handleRedis{}).init()
 var pHandleSql handle = (&handleSql{}).init()
 

@@ -8,67 +8,68 @@
 		<string name="remark" len="0-100" />
 
 		<!-- 第一步：计算总价格，并写入订单表中 -->
-		<job result="orderno">RandOrderNo(${orderId},5)</job>
+		<job result="today">Tformat('20060102')</job>
+		<job result="orderno">Sprintf('%s%05d',${today},${orderId})</job>
 		<job>update orders set remark = ${remark},orderno = ${orderno},money = (select sum(count*price) from shopping,goods where shopping.goodid = goods.id and shopping.userid = ${userid} and shopping.orderid = ${orderId}) where userid = ${userid} and id = ${orderId}</job>
 
 		<!-- 构建统一下单接口所需参数 -->
 		<job result="info" one="true">select user.openid,cast(orders.money*100 as SIGNED) money from user,orders where user.id = orders.userid and orders.id = ${orderId} and orders.userid = ${userid}</job>
-		<job result="openid">Json(${info},'openid')</job>
-		<job result="total_fee">Json(${info},'money')</job>
+		<job result="openid">Jget(${info},'openid')</job>
+		<job result="total_fee">Jget(${info},'money')</job>
 
 		<job result="Appid">Config('Appid')</job>
 		<job result="Mch_id">Config('Mch_id')</job>
 		<job result="Notify_url">Config('Notify_url')</job>
 		<job result="Trade_type">Config('Trade_type')</job>
-		<job result="Nonce_str">RandString(32)</job>
-		<job result="weichatParam">JsonSet('appid',${Appid},'mch_id',${Mch_id},'notify_url',${Notify_url},'trade_type',${Trade_type},'nonce_str',${Nonce_str},'body',${body},'total_fee',${total_fee},'out_trade_no',${orderId},'openid',${openid},'out_trade_no',${orderno},'spbill_create_ip',${_ip})</job>
+		<job result="Nonce_str">Rstring(32)</job>
+		<job result="weichatParam">Jset('appid',${Appid},'mch_id',${Mch_id},'notify_url',${Notify_url},'trade_type',${Trade_type},'nonce_str',${Nonce_str},'body',${body},'total_fee',${total_fee},'out_trade_no',${orderId},'openid',${openid},'out_trade_no',${orderno},'spbill_create_ip',${_ip})</job>
 
 		<!-- 对参数进行签名 -->
 		<job result="Key">Config('Key')</job>
 		<job result="sign">WeichatSign(${weichatParam},${Key})</job>
-		<job>JsonSet(${weichatParam},'sign',${sign})</job>
+		<job>Jset(${weichatParam},'sign',${sign})</job>
 
 		<!-- 请求微信服务器的统一下单接口 -->
 		<job result="weichatResult">WeichatPay(${weichatParam})</job>
-		<job result="returnCode">Json(${weichatResult},'return_code')</job>
-		<job result="returnMsg">Json(${weichatResult},'return_msg')</job>
+		<job result="returnCode">Jget(${weichatResult},'return_code')</job>
+		<job result="returnMsg">Jget(${weichatResult},'return_msg')</job>
 		<job>Equal(${returnCode},'FAIL',${returnMsg})</job>
 
 		<!-- 验证接口返回的签名是否正确 -->
-		<job result="sign">Json(${weichatResult},'sign')</job>
-		<job>JsonSet(${weichatResult},'sign',null)</job>
+		<job result="sign">Jget(${weichatResult},'sign')</job>
+		<job>Jset(${weichatResult},'sign',null)</job>
 		<job result="localSign">WeichatSign(${weichatResult},${Key})</job>
-		<job>JsonSet('localSign',${localSign},'sign',${sign})</job>
+		<job>Jset('localSign',${localSign},'sign',${sign})</job>
 
 		<!-- 构建微信HTML页面所需要参数 -->
-		<job result="timeStamp">TimeStampSecond()</job>
-		<job result="prepay_id">Json(${weichatResult},'prepay_id')</job>
-		<job result="package">StringAdd('prepay_id=',${prepay_id})</job>
-		<job result="htmlParam">JsonSet('appId',${Appid},'timeStamp',${timeStamp},'package',${package},'nonceStr',${Nonce_str},'signType','MD5')</job>
+		<job result="timeStamp">Tsecond()</job>
+		<job result="prepay_id">Jget(${weichatResult},'prepay_id')</job>
+		<job result="package">Sprintf('prepay_id=%s',${prepay_id})</job>
+		<job result="htmlParam">Jset('appId',${Appid},'timeStamp',${timeStamp},'package',${package},'nonceStr',${Nonce_str},'signType','MD5')</job>
 		<job result="sign">WeichatSign(${htmlParam},${Key})</job>
-		<job>JsonSet(${htmlParam},'paySign',${sign})</job>
+		<job>Jset(${htmlParam},'paySign',${sign})</job>
 
 		<!-- 将参数写入到页面并返回 -->
-		<job result="htmlParamString">JsonToString(${htmlParam})</job>
-		<job result="returnHtml"><![CDATA[Format('<html><head><title>正在进行微信支付...</title></head><body><script type="text/javascript">function onBridgeReady() {WeixinJSBridge.invoke("getBrandWCPayRequest", %v, function(res) {if (res.err_msg == "get_brand_wcpay_request：ok") {history.back();} else {history.back();}});}if (typeof WeixinJSBridge == "undefined") {if (document.addEventListener) {document.addEventListener("WeixinJSBridgeReady", onBridgeReady, false);}else if (document.attachEvent) {document.attachEvent("WeixinJSBridgeReady",onBridgeReady);document.attachEvent("onWeixinJSBridgeReady", onBridgeReady);}} else {onBridgeReady();}</script></body></html>',${htmlParamString})]]></job>
+		<job result="htmlParamString">JgetToString(${htmlParam})</job>
+		<job result="returnHtml"><![CDATA[Sprintf('<html><head><title>正在进行微信支付...</title></head><body><script type="text/javascript">function onBridgeReady() {WeixinJSBridge.invoke("getBrandWCPayRequest", %v, function(res) {if (res.err_msg == "get_brand_wcpay_request：ok") {history.back();} else {history.back();}});}if (typeof WeixinJSBridge == "undefined") {if (document.addEventListener) {document.addEventListener("WeixinJSBridgeReady", onBridgeReady, false);}else if (document.attachEvent) {document.attachEvent("WeixinJSBridgeReady",onBridgeReady);document.attachEvent("onWeixinJSBridgeReady", onBridgeReady);}} else {onBridgeReady();}</script></body></html>',${htmlParamString})]]></job>
 		<job>Return(${returnHtml})</job>
 	</func>
 
 	<func id="1001" name="weichatCallback" des="微信支付回调" private="true">
 
 		<!-- 验证签名是否正确 -->
-		<job result="sign">Json(${weichat},'sign')</job>
-		<job>JsonSet(${weichat},'sign',null)</job>
+		<job result="sign">Jget(${weichat},'sign')</job>
+		<job>Jset(${weichat},'sign',null)</job>
 		<job result="Key">Config('Key')</job>
 		<job result="localSign">WeichatSign(${weichat},${Key})</job>
-		<job test="NotEqual(${sign},${localSign})"><![CDATA[Return('<xml><return_code>FAIL</return_code><return_msg>签名sign错误</return_msg></xml>')]]></job>
+		<job test="Neq(${sign},${localSign})"><![CDATA[Return('<xml><return_code>FAIL</return_code><return_msg>签名sign错误</return_msg></xml>')]]></job>
 
 		<!-- 判断业务是否已经被处理 -->
-		<job result="orderno">Json(${weichat},'out_trade_no')</job>
+		<job result="orderno">Jget(${weichat},'out_trade_no')</job>
 		<job result="orderInfo" one="true">select id,state from orders where orderno = ${orderno}</job>
-		<job result="state">Json(${orderInfo},'state')</job>
-		<job result="orderid">Json(${orderInfo},'id')</job>
-		<job test="NotEqual(${state},1)"><![CDATA[Return('<xml><return_code>FAIL</return_code><return_msg>该订单号已经被处理</return_msg></xml>')]]></job>
+		<job result="state">Jget(${orderInfo},'state')</job>
+		<job result="orderid">Jget(${orderInfo},'id')</job>
+		<job test="Neq(${state},1)"><![CDATA[Return('<xml><return_code>FAIL</return_code><return_msg>该订单号已经被处理</return_msg></xml>')]]></job>
 
 		<!-- 更新订单状态 -->
 		<job>update orders set state = 2 where id = ${orderid}</job>
@@ -77,21 +78,21 @@
 			from user user1,user user2,orders,discount
 			where user1.id = orders.userid and orders.id = ${orderid} and discount.id = 1 and user1.parent = user2.id
 		</job>
-		<job result="pId" test="NotEqual(${pInfo},null)">Json(${pInfo}, 'id')</job>
-		<job result="money1" test="NotEqual(${pInfo},null)">Json(${pInfo},'money1')</job>
-		<job test="NotEqual(${pId},null)">insert into recode(userid,orderid,level,score,state) values(${pId},${orderid},1,${money1},0)</job>
+		<job result="pId" test="Neq(${pInfo},null)">Jget(${pInfo}, 'id')</job>
+		<job result="money1" test="Neq(${pInfo},null)">Jget(${pInfo},'money1')</job>
+		<job test="Neq(${pId},null)">insert into recode(userid,orderid,level,score,state) values(${pId},${orderid},1,${money1},0)</job>
 
 		<!-- 二级分成 -->
-		<job result="ppInfo" test="NotEqual(${pId},null)" one="true">select user2.id from user user1, user user2 where user1.id = ${pId} and user1.parent = user2.id</job>
-		<job result="ppId" test="NotEqual(${ppInfo},null)">Json(${ppInfo},'id')</job>
-		<job result="money2" test="NotEqual(${pInfo},null)">Json(${pInfo},'money2')</job>
-		<job test="NotEqual(${ppId},null)">insert into recode(userid,orderid,level,score,state) values(${ppId},${orderid},2,${money2},0)</job>
+		<job result="ppInfo" test="Neq(${pId},null)" one="true">select user2.id from user user1, user user2 where user1.id = ${pId} and user1.parent = user2.id</job>
+		<job result="ppId" test="Neq(${ppInfo},null)">Jget(${ppInfo},'id')</job>
+		<job result="money2" test="Neq(${pInfo},null)">Jget(${pInfo},'money2')</job>
+		<job test="Neq(${ppId},null)">insert into recode(userid,orderid,level,score,state) values(${ppId},${orderid},2,${money2},0)</job>
 
 		<!-- 三级分成 -->
-		<job result="pppInfo" test="NotEqual(${ppId},null)" one="true">select user2.id from user user1,user user2 where user1.id = ${ppId} and user1.parent = user2.id</job>
-		<job result="pppId" test="NotEqual(${pppInfo},null)">Json(${pppInfo},'id')</job>
-		<job result="money3" test="NotEqual(${pInfo},null)">Json(${pInfo},'money3')</job>
-		<job test="NotEqual(${pppId},null)">insert into recode(userid,orderid,level,score,state) values(${pppId},${orderid},3,${money3},0)</job>
+		<job result="pppInfo" test="Neq(${ppId},null)" one="true">select user2.id from user user1,user user2 where user1.id = ${ppId} and user1.parent = user2.id</job>
+		<job result="pppId" test="Neq(${pppInfo},null)">Jget(${pppInfo},'id')</job>
+		<job result="money3" test="Neq(${pInfo},null)">Jget(${pInfo},'money3')</job>
+		<job test="Neq(${pppId},null)">insert into recode(userid,orderid,level,score,state) values(${pppId},${orderid},3,${money3},0)</job>
 
 		<job><![CDATA[Return('<xml><return_code>SUCCESS</return_code><return_msg>OK</return_msg></xml>')]]></job>
 	</func>
@@ -101,8 +102,8 @@
 
 		<!-- 判断用户的积分是否足够本次兑换 -->
 		<job result="userInfo" one="true">select (score >= ${score}) as canChange,openid,nick from user where id = ${userid}</job>
-		<job result="canChange">Json(${userInfo},'canChange')</job>
-		<job>NotEqual(${canChange},1,'您的积分不足')</job>
+		<job result="canChange">Jget(${userInfo},'canChange')</job>
+		<job>Neq(${canChange},1,'您的积分不足')</job>
 
 		<!-- 插入用户兑换记录，暂时先将记录设置为未成功 -->
 		<job result="exchangeId">insert into exchange(id,userid,score,time,state) values(null,${userid},${score},now(),0)</job>
@@ -112,15 +113,16 @@
 		<!-- 组装微信红包所需参数并签名 -->
 		<job result="wxappid">Config('Appid')</job>
 		<job result="mch_id">Config('Mch_id')</job>
-		<job result="nonce_str">RandString(32)</job>
-		<job result="re_openid">Json(${userInfo},'openid')</job>
-		<job result="nick">Json(${userInfo},'nick')</job>
-		<job result="tempExchangeId">RandOrderNo(${exchangeId},10)</job>
-		<job result="mch_billno">StringAdd(${mch_id},${tempExchangeId})</job>
-		<job result="exchangeParam">JsonSet('wxappid',${wxappid},'mch_id',${mch_id},'nonce_str',${nonce_str},'send_name','和风坊','re_openid',${re_openid},'total_num','1','total_amount',${score},'wishing','感谢您对和风坊的支持！','client_ip',${_ip},'act_name','积分兑换红包','remark',${nick},'mch_billno',${mch_billno})</job>
+		<job result="nonce_str">Rstring(32)</job>
+		<job result="re_openid">Jget(${userInfo},'openid')</job>
+		<job result="nick">Jget(${userInfo},'nick')</job>
+		<job result="today">Tformat('20060102')</job>
+		<job result="tempExchangeId">Sprintf('%s%010d',${today},${exchangeId})</job>
+		<job result="mch_billno">Sprintf('%s%s',${mch_id},${tempExchangeId})</job>
+		<job result="exchangeParam">Jset('wxappid',${wxappid},'mch_id',${mch_id},'nonce_str',${nonce_str},'send_name','和风坊','re_openid',${re_openid},'total_num','1','total_amount',${score},'wishing','感谢您对和风坊的支持！','client_ip',${_ip},'act_name','积分兑换红包','remark',${nick},'mch_billno',${mch_billno})</job>
 		<job result="Key">Config('Key')</job>
 		<job result="sign">WeichatSign(${exchangeParam},${Key})</job>
-		<job>JsonSet(${exchangeParam},'sign',${sign})</job>
+		<job>Jset(${exchangeParam},'sign',${sign})</job>
 
 		<!-- 向微信服务器请求发红包接口 -->
 		<job result="exchangeResult">WxSendRedPack(${exchangeParam})</job>
@@ -128,12 +130,12 @@
 		<job test="Equal(${exchangeResult},null)">update exchange set state = 2 where userid = ${userid} and id = ${exchangeId}</job>
 		<job>Equal(${exchangeResult},null,'向微信服务器请求红包接口时异常，请稍后再试')</job>
 		<!-- 判断接口返回的结果是否正确 -->
-		<job result="return_code">Json(${exchangeResult},'return_code')</job>
-		<job result="return_msg">Json(${exchangeResult},'return_msg')</job>
-		<job test="NotEqual(${return_code},'SUCCESS')">update exchange set state = 2 where userid = ${userid} and id = ${exchangeId}</job>
-		<job>NotEqual(${return_code},'SUCCESS',${return_msg})</job>
+		<job result="return_code">Jget(${exchangeResult},'return_code')</job>
+		<job result="return_msg">Jget(${exchangeResult},'return_msg')</job>
+		<job test="Neq(${return_code},'SUCCESS')">update exchange set state = 2 where userid = ${userid} and id = ${exchangeId}</job>
+		<job>Neq(${return_code},'SUCCESS',${return_msg})</job>
 
-		<job>Json('success',1)</job>
+		<job>Jset('success',1)</job>
 
 	</func>
 
@@ -141,22 +143,25 @@
 
 		<job result="exchangeState">select value,text from dicti where dictid = 7</job>
 		<job result="exchange">select user.nick,user.portrait,exchange.time,exchange.score,exchange.state from user,exchange where user.id = ${userid} and user.id = exchange.userid order by exchange.time desc limit 0,10</job>
-		<job>JsonSet('exchange',${exchange},'exchangeState',${exchangeState})</job>
+		<job>Jset('exchange',${exchange},'exchangeState',${exchangeState})</job>
 	</func>
 
 	<func id="1004" name="exportOrders" des="导出订单记录并自动发送邮箱" private="true" cron="0 0 17 * * *">
 
-		<job result="orderData">select orders.id,orders.name,orders.tel,orders.detail,
-			GROUP_CONCAT(CONCAT(goods.name,IF(ISNULL(shopping.attach),'',CONCAT('(',shopping.attach,')')),' X',shopping.count) SEPARATOR ';') goods,
-			orders.orderno
-			from orders,shopping,goods
-			where orders.state = 2 and orders.id = shopping.orderid and shopping.goodid = goods.id group by orders.id
-		</job>
-		<job result="maxId">Max(${orderData},'id')</job>
-		<job result="fileName">TimeFormat('20060102')</job>
-		<job>ToXls(${orderData},'id,name,tel,detail,goods,orderno',${fileName})</job>
-		<job>JsonSet('maxId',${maxId})</job>
-		<job><![CDATA[update orders set state = 3 where state = 2 and id <= ${maxId}]]></job>
+		<job result="today">Tformat('20060102')</job>
+		<job result="orderno">Sprintf('%s%05d',${today},${orderid})</job>
+		<!-- <job result="orderData">select orders.id,orders.name,orders.tel,orders.detail, -->
+		<!-- GROUP_CONCAT(CONCAT(goods.name,IF(ISNULL(shopping.attach),'',CONCAT('(',shopping.attach,')')),' X',shopping.count) SEPARATOR ';') goods, -->
+		<!-- orders.orderno -->
+		<!-- from orders,shopping,goods -->
+		<!-- where orders.state = 2 and orders.id = shopping.orderid and shopping.goodid = goods.id group by orders.id order by orders.id -->
+		<!-- </job> -->
+		<!-- <job result="fileName">Tformat('20060102')</job> -->
+		<!-- <job>ToXls(${orderData},'id,name,tel,detail,goods,orderno',${fileName})</job> -->
+
+		<!-- <job result="maxIdOrder">JAget(${orderData},-1)</job> -->
+		<!-- <job result="maxId" test="Neq(${maxIdOrder},null)">Jget(${maxIdOrder},'id')</job> -->
+		<!-- <job result="orderCount" test="Neq(${maxIdOrder},null)"><![CDATA[update orders set state = 3 where state = 2 and id <= ${maxId}]]></job> -->
 	</func>
 
 </funcs>
