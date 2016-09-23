@@ -267,7 +267,6 @@ func (this *handleFunc) initSpecial() {
 	}
 	this.methodMap["WeichatSign"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
 		mReq := args[0].(map[string]interface{})
-		fmt.Println(mReq)
 		key := args[1].(string)
 
 		// 第一步：对 key 进行升序排序

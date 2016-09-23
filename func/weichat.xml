@@ -148,20 +148,18 @@
 
 	<func id="1004" name="exportOrders" des="导出订单记录并自动发送邮箱" private="true" cron="0 0 17 * * *">
 
-		<job result="today">Tformat('20060102')</job>
-		<job result="orderno">Sprintf('%s%05d',${today},${orderid})</job>
-		<!-- <job result="orderData">select orders.id,orders.name,orders.tel,orders.detail, -->
-		<!-- GROUP_CONCAT(CONCAT(goods.name,IF(ISNULL(shopping.attach),'',CONCAT('(',shopping.attach,')')),' X',shopping.count) SEPARATOR ';') goods, -->
-		<!-- orders.orderno -->
-		<!-- from orders,shopping,goods -->
-		<!-- where orders.state = 2 and orders.id = shopping.orderid and shopping.goodid = goods.id group by orders.id order by orders.id -->
-		<!-- </job> -->
-		<!-- <job result="fileName">Tformat('20060102')</job> -->
-		<!-- <job>ToXls(${orderData},'id,name,tel,detail,goods,orderno',${fileName})</job> -->
+		<job result="orderData">select orders.id,orders.name,orders.tel,orders.detail,
+			GROUP_CONCAT(CONCAT(goods.name,IF(ISNULL(shopping.attach),'',CONCAT('(',shopping.attach,')')),' X',shopping.count) SEPARATOR ';') goods,
+			orders.orderno
+			from orders,shopping,goods
+			where orders.state = 2 and orders.id = shopping.orderid and shopping.goodid = goods.id group by orders.id order by orders.id
+		</job>
+		<job result="fileName">Tformat('20060102')</job>
+		<job>ToXls(${orderData},'id,name,tel,detail,goods,orderno',${fileName})</job>
 
-		<!-- <job result="maxIdOrder">JAget(${orderData},-1)</job> -->
-		<!-- <job result="maxId" test="Neq(${maxIdOrder},null)">Jget(${maxIdOrder},'id')</job> -->
-		<!-- <job result="orderCount" test="Neq(${maxIdOrder},null)"><![CDATA[update orders set state = 3 where state = 2 and id <= ${maxId}]]></job> -->
+		<job result="maxIdOrder">JAget(${orderData},-1)</job>
+		<job result="maxId" test="Neq(${maxIdOrder},null)">Jget(${maxIdOrder},'id')</job>
+		<job result="orderCount" test="Neq(${maxIdOrder},null)"><![CDATA[update orders set state = 3 where state = 2 and id <= ${maxId}]]></job>
 	</func>
 
 </funcs>
