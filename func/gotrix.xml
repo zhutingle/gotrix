@@ -143,7 +143,14 @@
 		<job result="order" one="true">select * from orders where userid = ${userid} and id = ${orderid}</job>
 		<job result="shoppings">select goods.name,goods.icon,goods.price,shopping.attach,shopping.count from shopping,goods where userid = ${userid} and orderid = ${orderid} and goodid = goods.id</job>
 		<job result="address" one="true">select address.* from address,`user` where userid = ${userid} and userid = `user`.id and address.id = `user`.address</job>
-		<job>Jset('order',${order},'shoppings',${shoppings},'address',${address})</job>
+
+		<job result="wayid">Jget(${order},'wayname')</job>
+		<job result="waybill">Jget(${order},'waybill')</job>
+		<job result="dict" one="true" test="Neq(${wayid},null)">select text,des from dicti where dictid = 8 and value = ${wayid}</job>
+		<job result="wayname" test="Neq(${dict},null)">Jget(${dict},'text')</job>
+		<job result="waytype" test="Neq(${dict},null)">Jget(${dict},'des')</job>
+		<job result="wayquery" test="Neq(${waytype},null)"><![CDATA[http://m.kuaidi100.com/query?type=${waytype}&postid=${waybill}&id=1&valicode=&temp=0.2903927791300549]]></job>
+		<job>Jset('order',${order},'shoppings',${shoppings},'address',${address},'wayname',${wayname},'wayquery',${wayquery},'waybill',${waybill},'waytype',${waytype})</job>
 	</func>
 
 	<func id="22" name="selectAddress" des="查询地址">
