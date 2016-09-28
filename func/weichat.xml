@@ -158,12 +158,16 @@
 		<job result="filePath">ToXls(${orderData},'id,name,tel,detail,goods,orderno',${fileName})</job>
 
 		<job result="maxIdOrder">JAget(${orderData},-1)</job>
+		<job>Eq(${maxIdOrder},null,'今日没有订单记录')</job>
+
 		<job result="maxId" test="Neq(${maxIdOrder},null)">Jget(${maxIdOrder},'id')</job>
 		<job result="orderCount" test="Neq(${maxIdOrder},null)"><![CDATA[update orders set state = 3 where state = 2 and id <= ${maxId}]]></job>
 
 		<job result="subject">Sprintf('%s订单记录',${fileName})</job>
 		<job result="body">Sprintf('和风坊%s订单记录',${fileName})</job>
-		<job>SendEmail(${subject},${body},'382541175@qq.com',${filePath})</job>
+		<job result="group" one="true">select group_concat(email SEPARATOR ',') as receiver from receiver where type = 1</job>
+		<job result="receiver">Jget(${group},'receiver')</job>
+		<job>SendEmail(${subject},${body},${receiver},${filePath})</job>
 	</func>
 
 </funcs>
