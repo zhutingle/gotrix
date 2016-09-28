@@ -3,11 +3,9 @@ package handler
 import (
 	"crypto/md5"
 	"encoding/hex"
-	//	"encoding/json"
 	"fmt"
-	//	"math"
 	"math/rand"
-	//	"reflect"
+	"net/smtp"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,6 +15,7 @@ import (
 	"github.com/zhutingle/gotrix/global"
 	"github.com/zhutingle/gotrix/weichat"
 
+	"github.com/scorredoira/email"
 	"github.com/tealeg/xlsx"
 )
 
@@ -80,6 +79,7 @@ func (this *handleFunc) init() *handleFunc {
 	this.initRand()
 	this.initSpecial()
 	this.initXlsx()
+	this.initEmail()
 
 	return this
 }
@@ -361,11 +361,43 @@ func (this *handleFunc) initXlsx() {
 			}
 		}
 
-		err = file.Save(global.Config.TempFolder + fileName + ".xlsx")
+		filePath := global.Config.TempFolder + fileName + ".xlsx"
+		err = file.Save(filePath)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 
+		return filePath, nil
+	}
+}
+
+/**
+ * 定义所有email操作相关的函数
+ */
+func (this *handleFunc) initEmail() {
+	this.methodMap["SendEmail"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		subject := args[0].(string)
+		body := args[1].(string)
+		receiver := args[2].(string)
+		var err error
+
+		emailConfig := global.Config.Email
+		m := email.NewMessage(subject, body)
+		m.From = emailConfig.Address
+		m.To = strings.Split(receiver, ",")
+
+		if len(args) == 4 {
+			attach := args[3].(string)
+			err = m.Attach(attach)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+
+		err = email.Send(emailConfig.SmtpUrl, smtp.PlainAuth(emailConfig.Identify, emailConfig.Username, emailConfig.Password, emailConfig.Host), m)
+		if err != nil {
+			fmt.Println(err)
+		}
 		return
 	}
 }

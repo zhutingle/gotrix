@@ -2,6 +2,7 @@ package global
 
 import (
 	"fmt"
+	"net/mail"
 	"os"
 	"path/filepath"
 	"strings"
@@ -38,6 +39,7 @@ type Configuration struct {
 	Redis      Redis
 	Database   Database
 	WxCert     WxCert
+	Email      Email
 	V          []V
 	M          map[string]interface{}
 }
@@ -63,6 +65,15 @@ type WxCert struct {
 	Cert_pem    string
 	Key_pem     string
 	RootCA_Path string
+}
+
+type Email struct {
+	Address  mail.Address
+	SmtpUrl  string
+	Identify string
+	Username string
+	Password string
+	Host     string
 }
 
 type V struct {
