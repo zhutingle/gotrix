@@ -16,13 +16,13 @@
 
 		<job result="user" one="true">select store from user where id = ${userid}</job>
 		<job result="store">Jget(${user},'store')</job>
-		<job>Equal(${store},1,'您的店铺已经开立成功，不能重复开店')</job>
+		<job>Eq(${store},1,'您的店铺已经开立成功，不能重复开店')</job>
 
 		<job result="wechatReturn"><![CDATA[https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx32e598477c7d1ef8&secret=2fb49c36deeae54286a434be2777d387&code=${code}&grant_type=authorization_code]]></job>
 		<job result="access_token">Jget(${wechatReturn},'access_token')</job>
 		<job result="refresh_token">Jget(${wechatReturn},'refresh_token')</job>
 		<job result="openid">Jget(${wechatReturn},'openid')</job>
-		<job>Equal(${openid},null,'微信登陆时出错，请稍后再试')</job>
+		<job>Eq(${openid},null,'微信登陆时出错，请稍后再试')</job>
 
 		<job result="userInfo"><![CDATA[https://api.weixin.qq.com/sns/userinfo?access_token=${access_token}&openid=${openid}&lang=zh_CN]]></job>
 		<job result="nickname">Jget(${userInfo},'nickname')</job>
@@ -31,7 +31,7 @@
 		<job result="province">Jget(${userInfo},'province')</job>
 		<job result="city">Jget(${userInfo},'city')</job>
 		<job result="sex">Jget(${userInfo},'sex')</job>
-		<job>Equal(${nickname},null,'微信登陆时出错，请稍后再试。')</job>
+		<job>Eq(${nickname},null,'微信登陆时出错，请稍后再试。')</job>
 
 		<job>update user set nick=${nickname},portrait=${headimgurl},sex=${sex},country=${country},province=${province},city=${city},total=0,store=1 where id = ${userid}</job>
 	</func>
