@@ -39,7 +39,7 @@
 	<func id="302" name="selectRecode" des="查询分成记录">
 		<int name="state" />
 
-		<job result="recodes" test="Equal(${state},null)">select recode.level,recode.score,recode.state,orders.money,orders.state orderstate,`user`.portrait from recode,orders,`user` where recode.userid = ${userid} and recode.orderid = orders.id and orders.userid = `user`.id limit 0,10</job>
+		<job result="recodes" test="Eq(${state},null)">select recode.level,recode.score,recode.state,orders.money,orders.state orderstate,`user`.portrait from recode,orders,`user` where recode.userid = ${userid} and recode.orderid = orders.id and orders.userid = `user`.id limit 0,10</job>
 		<job result="recodes" test="Neq(${state},null)">select recode.level,recode.score,recode.state,orders.money,orders.state orderstate,`user`.portrait from recode,orders,`user` where recode.userid = ${userid} and recode.state = ${state} and recode.orderid = orders.id and orders.userid = `user`.id limit 0,10</job>
 		<job result="recodeLevel">select value,text from dicti where dictid = 5</job>
 		<job result="recodeState">select value,text from dicti where dictid = 6</job>
@@ -52,7 +52,7 @@
 
 		<job result="info" one="true">select score >= ${score} more from user where id = ${userid}</job>
 		<job result="more">Jget(${info},'more')</job>
-		<job>Equal(${more},0,'您的积分不够')</job>
+		<job>Eq(${more},0,'您的积分不够')</job>
 		<job>update score = score - ${score} where id = ${userid}</job>
 	</func>
 

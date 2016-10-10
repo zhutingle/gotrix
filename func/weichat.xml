@@ -33,7 +33,7 @@
 		<job result="weichatResult">WeichatPay(${weichatParam})</job>
 		<job result="returnCode">Jget(${weichatResult},'return_code')</job>
 		<job result="returnMsg">Jget(${weichatResult},'return_msg')</job>
-		<job>Equal(${returnCode},'FAIL',${returnMsg})</job>
+		<job>Eq(${returnCode},'FAIL',${returnMsg})</job>
 
 		<!-- 验证接口返回的签名是否正确 -->
 		<job result="sign">Jget(${weichatResult},'sign')</job>
@@ -127,8 +127,8 @@
 		<!-- 向微信服务器请求发红包接口 -->
 		<job result="exchangeResult">WxSendRedPack(${exchangeParam})</job>
 
-		<job test="Equal(${exchangeResult},null)">update exchange set state = 2 where userid = ${userid} and id = ${exchangeId}</job>
-		<job>Equal(${exchangeResult},null,'向微信服务器请求红包接口时异常，请稍后再试')</job>
+		<job test="Eq(${exchangeResult},null)">update exchange set state = 2 where userid = ${userid} and id = ${exchangeId}</job>
+		<job>Eq(${exchangeResult},null,'向微信服务器请求红包接口时异常，请稍后再试')</job>
 		<!-- 判断接口返回的结果是否正确 -->
 		<job result="return_code">Jget(${exchangeResult},'return_code')</job>
 		<job result="return_msg">Jget(${exchangeResult},'return_msg')</job>
