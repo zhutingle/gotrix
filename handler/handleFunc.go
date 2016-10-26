@@ -3,8 +3,11 @@ package handler
 import (
 	"crypto/md5"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math/rand"
+	"net/http"
 	"net/smtp"
 	"sort"
 	"strconv"
@@ -80,6 +83,7 @@ func (this *handleFunc) init() *handleFunc {
 	this.initSpecial()
 	this.initXlsx()
 	this.initEmail()
+	this.initHttp()
 
 	return this
 }
@@ -88,6 +92,23 @@ func (this *handleFunc) init() *handleFunc {
  * 定义所有与JSON操作相关的函数
  */
 func (this *handleFunc) initJson() {
+	// ToJson(string)
+	// ToJson([]byte)
+	// 将字符串转换为json格式
+	this.methodMap["ToJson"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		var param interface{} = args[0]
+		var e error
+
+		if _, ok := param.(string); ok {
+			e = json.Unmarshal([]byte(param.(string)), &response)
+		} else if _, ok := param.([]byte); ok {
+			e = json.Unmarshal(param.([]byte), &response)
+		}
+		if e != nil {
+			gErr = global.STRING_TO_JSON_ERROR
+		}
+		return
+	}
 	// Jget(map[string]interface{},string...)
 	// 两个参数：           取JSON中的某个键的值，返回该值
 	// 三个或以上参数：取JSON中的某些键的值，返回这些键和值组成的一个新的JSON
@@ -399,5 +420,31 @@ func (this *handleFunc) initEmail() {
 			fmt.Println(err)
 		}
 		return
+	}
+}
+
+/**
+ * 定义所有 Http 相关的扩展方法
+ */
+func (this *handleFunc) initHttp() {
+	this.methodMap["HttpGet"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		url := args[0].(string)
+
+		resp, e := http.Get(url)
+		if e != nil {
+			fmt.Println(e)
+			gErr = global.HTTPHANDLE_HTTP_GET_ERROR
+			return
+		}
+
+		defer resp.Body.Close()
+		body, e := ioutil.ReadAll(resp.Body)
+		if e != nil {
+			fmt.Println(e)
+			gErr = global.HTTPHANDLE_HTTP_READ_BODY
+			return
+		}
+
+		return body, nil
 	}
 }

@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
+	//	"os"
 	"os/exec"
-	"path/filepath"
+	//	"path/filepath"
 	"regexp"
 	"strconv"
 	"time"
@@ -21,27 +21,27 @@ import (
 
 func main() {
 
-	//	gotrixHandler = handler.SimpleHandler{}
-	//	gotrixHandler.Init()
+	gotrixHandler = handler.SimpleHandler{}
+	gotrixHandler.Init()
+
+	checkedParams := &global.CheckedParams{Func: 2000, V: make(map[string]interface{})}
+	response, err := gotrixHandler.Handle(checkedParams)
+	log.Println(response)
+	log.Println(err)
+
+	//	if len(os.Args) > 1 {
+	//		GotrixServer()
+	//	} else {
+	//		filePath, _ := filepath.Abs(os.Args[0])
+	//		args := append([]string{filePath}, "")
 	//
-	//	checkedParams := &global.CheckedParams{Func: 1004, V: make(map[string]interface{})}
-	//	response, err := gotrixHandler.Handle(checkedParams)
-	//	log.Println(response)
-	//	log.Println(err)
-
-	if len(os.Args) > 1 {
-		GotrixServer()
-	} else {
-		filePath, _ := filepath.Abs(os.Args[0])
-		args := append([]string{filePath}, "")
-
-		logFile, _ := os.Create(global.Config.LogFile)
-		process, err := os.StartProcess(filePath, args, &os.ProcAttr{Files: []*os.File{logFile, logFile, logFile}})
-		if err != nil {
-			log.Println(err)
-		}
-		log.Println(process)
-	}
+	//		logFile, _ := os.Create(global.Config.LogFile)
+	//		process, err := os.StartProcess(filePath, args, &os.ProcAttr{Files: []*os.File{logFile, logFile, logFile}})
+	//		if err != nil {
+	//			log.Println(err)
+	//		}
+	//		log.Println(process)
+	//	}
 
 }
 

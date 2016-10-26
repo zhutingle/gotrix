@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<funcs>
+
+	<func id="2000" name="access_token" des="从微信公众平台获取access_token">
+		<job result="access_token">get('access_token')</job>
+		<job>Neq(${access_token},null,'')</job>
+
+		<job result="appid">Config('Appid')</job>
+		<job result="appSecret">Config('AppSecret')</job>
+		<job result="url"><![CDATA[Sprintf('https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=%s&secret=%s',${appid},${appSecret})]]></job>
+		<job result="result">HttpGet(${url})</job>
+		<job result="json">ToJson(${result})</job>
+	</func>
+
+</funcs>

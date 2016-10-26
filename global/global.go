@@ -79,6 +79,7 @@ var ARRAY_PARAM_ERROR *GotrixError = &GotrixError{Status: 2022, Msg: "参数[%s]
 var HTTPHANDLE_HTTP_GET_ERROR *GotrixError = &GotrixError{Status: 2050, Msg: "执行httpHandle时，向url请求时出错"}
 var HTTPHANDLE_HTTP_READ_BODY *GotrixError = &GotrixError{Status: 2051, Msg: "执行httpHandle时，读取url返回内容时出错"}
 var HTTPHANDLE_ANALYZE_ERROR *GotrixError = &GotrixError{Status: 2052, Msg: "执行httpHandle时，解析返回内容时出错"}
-var JSON_TO_STRING_ERROR *GotrixError = &GotrixError{Status: 2060, Msg: "执行JsonToString时，解析为json字符串时出错"}
+var JSON_TO_STRING_ERROR *GotrixError = &GotrixError{Status: 2060, Msg: "执行JsonToString时，转换为json字符串时出错"}
+var STRING_TO_JSON_ERROR *GotrixError = &GotrixError{Status: 2061, Msg: "执行ToJson时，转换为Json时出错"}
 
 var INTERNAL_ERROR *GotrixError = &GotrixError{Status: 9999, Msg: "内部错误"}
