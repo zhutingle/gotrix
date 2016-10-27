@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
@@ -431,6 +432,37 @@ func (this *handleFunc) initHttp() {
 		url := args[0].(string)
 
 		resp, e := http.Get(url)
+		if e != nil {
+			fmt.Println(e)
+			gErr = global.HTTPHANDLE_HTTP_GET_ERROR
+			return
+		}
+
+		defer resp.Body.Close()
+		body, e := ioutil.ReadAll(resp.Body)
+		if e != nil {
+			fmt.Println(e)
+			gErr = global.HTTPHANDLE_HTTP_READ_BODY
+			return
+		}
+
+		return body, nil
+	}
+
+	this.methodMap["HttpPost"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		url := args[0].(string)
+		data := args[1]
+
+		bs, e := json.Marshal(data)
+		if e != nil {
+			fmt.Println(e)
+			gErr = global.HTTPHANDLE_HTTP_GET_ERROR
+			return
+		}
+
+		reqBody := bytes.NewBuffer(bs)
+
+		resp, e := http.Post(url, "application/json;charset=utf-8", reqBody)
 		if e != nil {
 			fmt.Println(e)
 			gErr = global.HTTPHANDLE_HTTP_GET_ERROR
