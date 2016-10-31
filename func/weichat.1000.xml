@@ -9,7 +9,7 @@
 
 		<!-- 第一步：计算总价格，并写入订单表中 -->
 		<job result="today">Tformat('20060102')</job>
-		<job result="orderno">Sprintf('%s%05d',${today},${orderId})</job>
+		<job result="orderno">Sprintf('%v%05v',${today},${orderId})</job>
 		<job>update orders set remark = ${remark},orderno = ${orderno},money = (select sum(count*price) from shopping,goods where shopping.goodid = goods.id and shopping.userid = ${userid} and shopping.orderid = ${orderId}) where userid = ${userid} and id = ${orderId}</job>
 
 		<!-- 构建统一下单接口所需参数 -->
@@ -22,7 +22,7 @@
 		<job result="Notify_url">Config('Notify_url')</job>
 		<job result="Trade_type">Config('Trade_type')</job>
 		<job result="Nonce_str">Rstring(32)</job>
-		<job result="weichatParam">Jset('appid',${Appid},'mch_id',${Mch_id},'notify_url',${Notify_url},'trade_type',${Trade_type},'nonce_str',${Nonce_str},'body',${body},'total_fee',${total_fee},'out_trade_no',${orderId},'openid',${openid},'out_trade_no',${orderno},'spbill_create_ip',${_ip})</job>
+		<job result="weichatParam">Jset('appid',${Appid},'mch_id',${Mch_id},'notify_url',${Notify_url},'trade_type',${Trade_type},'nonce_str',${Nonce_str},'body',${body},'total_fee',${total_fee},'openid',${openid},'out_trade_no',${orderno},'spbill_create_ip',${_ip})</job>
 
 		<!-- 对参数进行签名 -->
 		<job result="Key">Config('Key')</job>

@@ -24,7 +24,7 @@ func main() {
 	//	gotrixHandler = handler.SimpleHandler{}
 	//	gotrixHandler.Init()
 	//
-	//	checkedParams := &global.CheckedParams{Func: 2001, V: make(map[string]interface{})}
+	//	checkedParams := &global.CheckedParams{Func: 2000, V: make(map[string]interface{})}
 	//	response, err := gotrixHandler.Handle(checkedParams)
 	//	log.Println(response)
 	//	log.Println(err)
@@ -116,7 +116,6 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 
 	// --------------------业务执行器--------------------
 	var response interface{}
-	var result []byte
 	response, gErr = gotrixHandler.Handle(checkedParams)
 	if gErr != nil {
 		writeError(w, gErr)
@@ -146,7 +145,7 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(encryptResult)
 
 	logBuffer.WriteString("\n----Result: ")
-	logBuffer.Write(result)
+	logBuffer.Write(str)
 	logBuffer.WriteString("\n----Spend: ")
 	logBuffer.WriteString(strconv.FormatInt((time.Now().UnixNano()-start)/1000000, 10))
 	logBuffer.WriteString(" ms")
