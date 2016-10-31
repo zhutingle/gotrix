@@ -17,10 +17,10 @@ var funcReg *regexp.Regexp = regexp.MustCompile("^(\\w+)\\((.*)\\)$")
 var argsReg *regexp.Regexp = regexp.MustCompile("((true)|(false)|(null)|(-?\\d+)|(-?\\d+\\.\\d+)|(\\'.*?\\')|(\\$\\{\\w+\\}))(?:,|$)")
 var sqlArgsReg *regexp.Regexp = regexp.MustCompile("\\$\\{\\w+\\}")
 
-var pHandleHttp handle = &handleHttp{}
-var pHandleFunc handle = (&handleFunc{}).init()
-var pHandleRedis handle = (&handleRedis{}).init()
-var pHandleSql handle = (&handleSql{}).init()
+var pHandleHttp Handle
+var pHandleFunc Handle
+var pHandleRedis Handle
+var pHandleSql Handle
 
 type Result struct {
 	Sql  []Sql  `xml:"sql"`
@@ -58,7 +58,7 @@ type Job struct {
 	Test    string `xml:"test,attr"`
 	One     bool   `xml:"one,attr"`
 	Job     string `xml:",innerxml"`
-	handle  handle
+	handle  Handle
 	testJob *Job
 }
 
@@ -77,7 +77,12 @@ var funcMap map[int]*Func
 var sqlMap map[int]*Sql
 var pageMap map[int]*Page
 
-func readXmlFolder(folder string) {
+func readXmlFolder(simpleHandler SimpleHandler, folder string) {
+
+	pHandleHttp = &handleHttp{}
+	pHandleFunc = (&handleFunc{G_simpleHandler: simpleHandler}).init()
+	pHandleRedis = (&handleRedis{}).init()
+	pHandleSql = (&handleSql{}).init()
 
 	funcMap = make(map[int]*Func)
 	sqlMap = make(map[int]*Sql)

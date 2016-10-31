@@ -19,12 +19,18 @@ import (
 	"github.com/zhutingle/gotrix/weichat"
 )
 
+func test() {
+	fmt.Println(os.Args)
+	fmt.Println(filepath.Separator)
+}
+
 func main() {
 
 	//	gotrixHandler = handler.SimpleHandler{}
 	//	gotrixHandler.Init()
 	//
 	//	checkedParams := &global.CheckedParams{Func: 2000, V: make(map[string]interface{})}
+	//	checkedParams.V["orderId"] = float64(19)
 	//	response, err := gotrixHandler.Handle(checkedParams)
 	//	log.Println(response)
 	//	log.Println(err)

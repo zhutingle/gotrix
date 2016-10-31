@@ -13,13 +13,13 @@ type SimpleHandler struct {
 	cronManager *cron.Cron
 }
 
-type handle interface {
+type Handle interface {
 	handle(job *Job, cp *global.CheckedParams) (result interface{}, gErr *global.GotrixError)
 }
 
 func (this SimpleHandler) Init() {
 
-	readXmlFolder("src/github.com/zhutingle/gotrix/func")
+	readXmlFolder(this, "src/github.com/zhutingle/gotrix/func")
 
 	this.cronTask()
 

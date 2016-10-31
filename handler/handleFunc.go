@@ -24,7 +24,8 @@ import (
 )
 
 type handleFunc struct {
-	methodMap map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
+	G_simpleHandler SimpleHandler
+	methodMap       map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
 }
 
 func (this *handleFunc) handle(job *Job, cp *global.CheckedParams) (result interface{}, gErr *global.GotrixError) {
@@ -85,6 +86,7 @@ func (this *handleFunc) init() *handleFunc {
 	this.initXlsx()
 	this.initEmail()
 	this.initHttp()
+	this.initCall()
 
 	return this
 }
@@ -232,6 +234,26 @@ func (this *handleFunc) initJudge() {
 	// 第三个参数不为空时抛出第三个参数所示文字的异常，为空时抛出内部异常
 	this.methodMap["Neq"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
 		if args[0] != args[1] {
+			if len(args) >= 3 {
+				gErr = global.NewGotrixError(global.BLANK_ERROR, args[2])
+			} else {
+				gErr = global.INTERNAL_ERROR
+			}
+		}
+		return
+	}
+	this.methodMap["G"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		if global.ToFloat64Must(args[0]) > global.ToFloat64Must(args[1]) {
+			if len(args) >= 3 {
+				gErr = global.NewGotrixError(global.BLANK_ERROR, args[2])
+			} else {
+				gErr = global.INTERNAL_ERROR
+			}
+		}
+		return
+	}
+	this.methodMap["L"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		if global.ToFloat64Must(args[0]) < global.ToFloat64Must(args[1]) {
 			if len(args) >= 3 {
 				gErr = global.NewGotrixError(global.BLANK_ERROR, args[2])
 			} else {
@@ -493,5 +515,19 @@ func (this *handleFunc) initHttp() {
 		}
 
 		return body, nil
+	}
+}
+
+/**
+ * 定义所有调用其它相关的扩展方法
+ */
+func (this *handleFunc) initCall() {
+	this.methodMap["SyncCall"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+
+		var funcId = args[0].(int64)
+		var param = args[1].(map[string]interface{})
+
+		checkedParams := &global.CheckedParams{Func: int(funcId), V: param}
+		return this.G_simpleHandler.Handle(checkedParams)
 	}
 }
