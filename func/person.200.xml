@@ -3,7 +3,9 @@
 
 	<func id="200" name="selectUser" des="查询个人信息">
 
-		<job one="true">select id,nick,portrait,totalbuy,store,score from user where id = ${userid}</job>
+		<job result="userInfo" one="true">select id,nick,portrait,totalbuy,store,score,parent from user where id = ${userid}</job>
+		<job result="parentInfo" one="true">select user2.nick from user user1,user user2 where user1.id = ${userid} and user1.parent = user2.id</job>
+		<job>Jset('userInfo',${userInfo},'parentInfo',${parentInfo})</job>
 	</func>
 
 	<func id="201" name="selectAllOrders" des="查询全部订单">
