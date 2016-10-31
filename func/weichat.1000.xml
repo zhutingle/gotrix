@@ -50,7 +50,7 @@
 		<job>Jset(${htmlParam},'paySign',${sign})</job>
 
 		<!-- 将参数写入到页面并返回 -->
-		<job result="htmlParamString">JgetToString(${htmlParam})</job>
+		<job result="htmlParamString">ToString(${htmlParam})</job>
 		<job result="returnHtml"><![CDATA[Sprintf('<html><head><title>正在进行微信支付...</title></head><body><script type="text/javascript">function onBridgeReady() {WeixinJSBridge.invoke("getBrandWCPayRequest", %v, function(res) {if (res.err_msg == "get_brand_wcpay_request：ok") {history.back();} else {history.back();}});}if (typeof WeixinJSBridge == "undefined") {if (document.addEventListener) {document.addEventListener("WeixinJSBridgeReady", onBridgeReady, false);}else if (document.attachEvent) {document.attachEvent("WeixinJSBridgeReady",onBridgeReady);document.attachEvent("onWeixinJSBridgeReady", onBridgeReady);}} else {onBridgeReady();}</script></body></html>',${htmlParamString})]]></job>
 		<job>Return(${returnHtml})</job>
 	</func>

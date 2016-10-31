@@ -110,6 +110,21 @@ func (this *handleFunc) initJson() {
 		}
 		return
 	}
+	// ToString(map[string]interface{})
+	// ToString([]interface{})
+	// 将json格式转为字符串
+	this.methodMap["ToString"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		var jsonObject = args[0]
+
+		bs, e := json.Marshal(jsonObject)
+		if e != nil {
+			gErr = global.JSON_TO_STRING_ERROR
+		}
+
+		response = string(bs)
+
+		return
+	}
 	// Jget(map[string]interface{},string...)
 	// 两个参数：           取JSON中的某个键的值，返回该值
 	// 三个或以上参数：取JSON中的某些键的值，返回这些键和值组成的一个新的JSON
