@@ -94,6 +94,9 @@
 		<job result="money3" test="Neq(${pInfo},null)">Jget(${pInfo},'money3')</job>
 		<job test="Neq(${pppId},null)">insert into recode(userid,orderid,level,score,state) values(${pppId},${orderid},3,${money3},0)</job>
 
+		<job result="param">Jset('orderid',${orderid})</job>
+		<job>SyncCall(2002,${param})</job>
+
 		<job><![CDATA[Return('<xml><return_code>SUCCESS</return_code><return_msg>OK</return_msg></xml>')]]></job>
 	</func>
 

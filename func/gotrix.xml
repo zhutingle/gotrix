@@ -134,8 +134,10 @@
 
 		<job result="orderid">insert into orders(id,userid,state,time) values(null,${userid},1,now())</job>
 		<job result="shoppingcount">update shopping set orderid = ${orderid} where userid = ${userid} and id in (${shoppingids})</job>
+
 		<job result="param">Jset('orderid',${orderid})</job>
 		<job>SyncCall(2001,${param})</job>
+
 		<job>Jset('orderid',${orderid},'shoppingcount',${shoppingcount})</job>
 	</func>
 
