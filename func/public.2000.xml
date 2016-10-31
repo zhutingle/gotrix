@@ -17,13 +17,13 @@
 	</func>
 
 	<func id="2001" name="sendNewOrderSuccess" des="发送模板消息(新生成订单)" private="true">
-		<int name="orderId" must="true" />
+		<int name="orderid" must="true" />
 
 		<job result="info" one="true">select
 			orders.time,`user`.openid,
 			GROUP_CONCAT(CONCAT(goods.name,IF(ISNULL(shopping.attach),'',CONCAT('(',shopping.attach,')')),' X',shopping.count) SEPARATOR ';') goods
 			from orders,shopping,goods,`user`
-			where orders.id = ${orderId} and orders.id = shopping.orderid and shopping.goodid = goods.id and orders.userid = `user`.id
+			where orders.id = ${orderid} and orders.id = shopping.orderid and shopping.goodid = goods.id and orders.userid = `user`.id
 		</job>
 		<job result="time">Jget(${info},'time')</job>
 		<job result="openid">Jget(${info},'openid')</job>
@@ -34,10 +34,10 @@
 		<job result="first">Jset('color','#173177','value','和风坊新订单生成通知，点击支付')</job>
 		<job result="keyword1">Jset('color','#173177','value',${time})</job>
 		<job result="keyword2">Jset('color','#173177','value',${goods})</job>
-		<job result="keyword3">Jset('color','#173177','value',${orderId})</job>
+		<job result="keyword3">Jset('color','#173177','value',${orderid})</job>
 		<job result="remark">Jset('color','#173177','value','和风坊感谢您的支持。')</job>
 		<job result="data">Jset('first',${first},'keyword1',${keyword1},'keyword2',${keyword2},'keyword3',${keyword3},'remark',${remark})</job>
-		<job result="openUrl">Sprintf('http://thribu.randiancx.com/order.html?id=%v',${orderId})</job>
+		<job result="openUrl">Sprintf('http://thribu.randiancx.com/order.html?id=%v',${orderid})</job>
 		<job result="param">Jset('touser',${openid},'template_id','Z5fjrOOl9lf5hB15KI6OtVIx93pvfGK9JXG19EJI-mM','url',${openUrl},'data',${data})</job>
 		<job result="resp">HttpPost(${url},${param})</job>
 	</func>
