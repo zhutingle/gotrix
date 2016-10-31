@@ -26,28 +26,28 @@ func test() {
 
 func main() {
 
-	gotrixHandler = handler.SimpleHandler{}
-	gotrixHandler.Init()
-
-	checkedParams := &global.CheckedParams{Func: 2002, V: make(map[string]interface{})}
-	checkedParams.V["orderid"] = float64(19)
-	response, err := gotrixHandler.Handle(checkedParams)
-	log.Println(response)
-	log.Println(err)
-
-	//	if len(os.Args) > 1 {
-	//		GotrixServer()
-	//	} else {
-	//		filePath, _ := filepath.Abs(os.Args[0])
-	//		args := append([]string{filePath}, "")
+	//	gotrixHandler = handler.SimpleHandler{}
+	//	gotrixHandler.Init()
 	//
-	//		logFile, _ := os.Create(global.Config.LogFile)
-	//		process, err := os.StartProcess(filePath, args, &os.ProcAttr{Files: []*os.File{logFile, logFile, logFile}})
-	//		if err != nil {
-	//			log.Println(err)
-	//		}
-	//		log.Println(process)
-	//	}
+	//	checkedParams := &global.CheckedParams{Func: 2002, V: make(map[string]interface{})}
+	//	checkedParams.V["orderid"] = float64(19)
+	//	response, err := gotrixHandler.Handle(checkedParams)
+	//	log.Println(response)
+	//	log.Println(err)
+
+	if len(os.Args) > 1 {
+		GotrixServer()
+	} else {
+		filePath, _ := filepath.Abs(os.Args[0])
+		args := append([]string{filePath}, "")
+
+		logFile, _ := os.Create(global.Config.LogFile)
+		process, err := os.StartProcess(filePath, args, &os.ProcAttr{Files: []*os.File{logFile, logFile, logFile}})
+		if err != nil {
+			log.Println(err)
+		}
+		log.Println(process)
+	}
 
 }
 
