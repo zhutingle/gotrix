@@ -69,8 +69,8 @@ type Param struct {
 	Must    bool   `xml:"must,attr"`
 	Len     string `xml:"len,attr"`
 	Valid   Valid
-	min     int
-	max     int
+	min     int64
+	max     int64
 }
 
 var funcMap map[int]*Func
@@ -80,7 +80,7 @@ var pageMap map[int]*Page
 func readXmlFolder(simpleHandler SimpleHandler, folder string) {
 
 	pHandleHttp = &handleHttp{}
-	pHandleFunc = (&handleFunc{G_simpleHandler: simpleHandler}).init()
+	pHandleFunc = (&handleFunc{simpleHandler: simpleHandler}).init()
 	pHandleRedis = (&handleRedis{}).init()
 	pHandleSql = (&handleSql{}).init()
 
@@ -122,15 +122,15 @@ func readXmlFolder(simpleHandler SimpleHandler, folder string) {
 			case "string":
 				v.Param[i].Valid = stringVaid
 				if len(v.Param[i].Len) > 0 {
-					v.Param[i].min, _ = strconv.Atoi(regexp.MustCompile("^\\d+").FindString(v.Param[i].Len))
-					v.Param[i].max, _ = strconv.Atoi(regexp.MustCompile("\\d+$").FindString(v.Param[i].Len))
+					v.Param[i].min, _ = strconv.ParseInt(regexp.MustCompile("^\\d+").FindString(v.Param[i].Len), 10, 64)
+					v.Param[i].max, _ = strconv.ParseInt(regexp.MustCompile("\\d+$").FindString(v.Param[i].Len), 10, 64)
 				}
 				break
 			case "int":
 				v.Param[i].Valid = intValid
 				if len(v.Param[i].Len) > 0 {
-					v.Param[i].min, _ = strconv.Atoi(regexp.MustCompile("^\\d+").FindString(v.Param[i].Len))
-					v.Param[i].max, _ = strconv.Atoi(regexp.MustCompile("\\d+$").FindString(v.Param[i].Len))
+					v.Param[i].min, _ = strconv.ParseInt(regexp.MustCompile("^\\d+").FindString(v.Param[i].Len), 10, 64)
+					v.Param[i].max, _ = strconv.ParseInt(regexp.MustCompile("\\d+$").FindString(v.Param[i].Len), 10, 64)
 				}
 				break
 			case "bool":

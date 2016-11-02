@@ -34,7 +34,7 @@ func insertDicti(gotrixHandler handler.SimpleHandler, t *testing.T, dictid float
 func TestSimpleHandler(t *testing.T) {
 
 	gotrixHandler := handler.SimpleHandler{}
-	gotrixHandler.Init("127.0.0.1:6379")
+	gotrixHandler.Init()
 
 	str := read3("C:\\Users\\Zhu\\Desktop\\p.txt")
 

@@ -24,8 +24,8 @@ import (
 )
 
 type handleFunc struct {
-	G_simpleHandler SimpleHandler
-	methodMap       map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
+	simpleHandler SimpleHandler
+	methodMap     map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
 }
 
 func (this *handleFunc) handle(job *Job, cp *global.CheckedParams) (result interface{}, gErr *global.GotrixError) {
@@ -528,6 +528,6 @@ func (this *handleFunc) initCall() {
 		var param = args[1].(map[string]interface{})
 
 		checkedParams := &global.CheckedParams{Func: int(funcId), V: param}
-		return this.G_simpleHandler.Handle(checkedParams)
+		return this.simpleHandler.Handle(checkedParams)
 	}
 }

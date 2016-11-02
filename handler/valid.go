@@ -17,7 +17,7 @@ func (this StringValid) Valid(param *Param, value interface{}) *global.GotrixErr
 	switch value.(type) {
 	case string:
 		var val string = value.(string)
-		var length = len(val)
+		var length = int64(len(val))
 		if param.Must && length == 0 {
 			return global.NewGotrixError(global.PARAM_MUST_EXISTS, param.Name)
 		}
@@ -37,9 +37,9 @@ func (this StringValid) Valid(param *Param, value interface{}) *global.GotrixErr
 }
 
 func (this IntValid) Valid(param *Param, value interface{}) *global.GotrixError {
-	f, e := global.ToFloat64(value)
+	f, e := global.ToInt64(value)
 	if e == nil {
-		var integerValue int = int(f)
+		var integerValue = f
 		if len(param.Len) > 0 && (integerValue < param.min || integerValue > param.max) {
 			return global.NewGotrixError(global.PARAM_VALUE_ERROR, param.Name, param.min, param.max)
 		}
