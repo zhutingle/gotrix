@@ -1,7 +1,7 @@
 package main
 
 import (
-	"bufio"
+	//	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -36,19 +36,23 @@ func main() {
 	//	log.Println(response)
 	//	log.Println(err)
 
-	if len(os.Args) > 1 {
-		GotrixServer()
-	} else {
-		filePath, _ := filepath.Abs(os.Args[0])
-		args := append([]string{filePath}, "")
+	global.InitPassword()
 
-		logFile, _ := os.Create(global.Config.LogFile)
-		process, err := os.StartProcess(filePath, args, &os.ProcAttr{Files: []*os.File{logFile, logFile, logFile}})
-		if err != nil {
-			log.Println(err)
-		}
-		log.Println(process)
-	}
+	global.InitConfiguration()
+
+	//	if len(os.Args) > 1 {
+	//		GotrixServer()
+	//	} else {
+	//		filePath, _ := filepath.Abs(os.Args[0])
+	//		args := append([]string{filePath}, "")
+	//
+	//		logFile, _ := os.Create(global.Config.LogFile)
+	//		process, err := os.StartProcess(filePath, args, &os.ProcAttr{Files: []*os.File{logFile, logFile, logFile}})
+	//		if err != nil {
+	//			log.Println(err)
+	//		}
+	//		log.Println(process)
+	//	}
 
 }
 
@@ -139,7 +143,7 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 	str, _ := json.Marshal(response)
 	buffer.Write(str)
 	buffer.WriteString("}")
-	encryptResult, e := checker.AesEncrypt(buffer.Bytes(), checkedParams.Pass, 256)
+	encryptResult, e := global.AesEncrypt(buffer.Bytes(), checkedParams.Pass, 256)
 	if e != nil {
 		writeError(w, global.RETURN_DATE_ECNRYPT_ERROR)
 

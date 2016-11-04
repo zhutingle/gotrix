@@ -1,9 +1,9 @@
-package checker
+package global
 
 import (
+	"crypto/md5"
 	"encoding/base64"
 	"errors"
-	"fmt"
 	"math"
 	"math/rand"
 	"time"
@@ -286,6 +286,8 @@ func AesDecrypt(ciphertext []byte, password []byte, nBits int) (bytes []byte, er
 	return bs, nil
 }
 
-func init() {
-	fmt.Sprintln("%d,%d", rand.Int(), time.Now().Unix())
+func Md5(bs []byte) []byte {
+	md5Ctx := md5.New()
+	md5Ctx.Write(bs)
+	return md5Ctx.Sum(nil)
 }

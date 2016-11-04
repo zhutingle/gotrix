@@ -77,7 +77,7 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 	case string:
 		pass = []byte(aesPass.(string))
 		var decryptBytes []byte
-		decryptBytes, e = AesDecrypt(b[i+1:], pass, 256)
+		decryptBytes, e = global.AesDecrypt(b[i+1:], pass, 256)
 		if e == nil {
 			e = json.Unmarshal(decryptBytes, &(checkedParams.V))
 		}
@@ -92,7 +92,7 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 			if _, ok := val.(string); ok {
 				pass = []byte(val.(string))
 				var decryptBytes []byte
-				decryptBytes, e = AesDecrypt(b[i+1:], pass, 256)
+				decryptBytes, e = global.AesDecrypt(b[i+1:], pass, 256)
 				if e != nil {
 					continue
 				}

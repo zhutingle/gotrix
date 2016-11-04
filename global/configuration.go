@@ -11,16 +11,20 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-func init() {
-	fmt.Println("Gotrix Global Configuration ...")
+func InitConfiguration() {
+	fmt.Println("Gotrix 开始读取全局配置文件 ...")
 
 	filePath, _ := filepath.Abs(os.Args[0])
 	lastIndexOfSeperator := strings.LastIndex(filePath, string(filepath.Separator))
 	filePath = filePath[:lastIndexOfSeperator+1]
+	filePath = filePath + "gotrix.conf"
 
-	if _, err := toml.DecodeFile(filePath+"gotrix.conf", &Config); err != nil {
-		fmt.Println("Gotrix Global Configuration cause an error:")
-		fmt.Println(err)
+	bs, err := ReadConfigFile(filePath)
+	if err != nil {
+		panic(fmt.Sprintf("读取配置文件出现一个异常：[%v]", err))
+	}
+	if _, err := toml.Decode(string(bs), &Config); err != nil {
+		panic(fmt.Sprintf("Gotrix 读取全局配置文件时出现一个异常：[%v]", err))
 	} else {
 		Config.M = make(map[string]interface{}, 0)
 		for _, v := range Config.V {
