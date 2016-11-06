@@ -50,7 +50,7 @@ func main() {
 		switch args {
 		case "start":
 			if global.Config.Args.Console {
-				//				GotrixServer()
+				GotrixServer()
 			} else {
 				filePath, _ := filepath.Abs(os.Args[0])
 				args := append(os.Args, "--console", "--password", global.Config.Args.Password)
@@ -65,13 +65,13 @@ func main() {
 		}
 	}
 
-	gotrixHandler = handler.SimpleHandler{}
-	gotrixHandler.Init()
-	checkedParams := &global.CheckedParams{Func: 2003, V: make(map[string]interface{})}
-	checkedParams.V["userid"] = 2
-	response, err := gotrixHandler.Handle(checkedParams)
-	log.Println(response)
-	log.Println(err)
+	//	gotrixHandler = handler.SimpleHandler{}
+	//	gotrixHandler.Init()
+	//	checkedParams := &global.CheckedParams{Func: 2003, V: make(map[string]interface{})}
+	//	checkedParams.V["userid"] = 2
+	//	response, err := gotrixHandler.Handle(checkedParams)
+	//	log.Println(response)
+	//	log.Println(err)
 
 }
 
