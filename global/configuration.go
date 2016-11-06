@@ -38,6 +38,7 @@ func InitConfiguration() {
 var Config Configuration
 
 type Configuration struct {
+	Args       Args
 	LogFile    string
 	TempFolder string
 	Redis      Redis
@@ -46,6 +47,12 @@ type Configuration struct {
 	Email      Email
 	V          []V
 	M          map[string]interface{}
+}
+
+type Args struct {
+	Decrypt  bool   // 控制台参数 --decrypt
+	Console  bool   // 控制台参数 --console
+	Password string // 控制台参数 --password {{password}}
 }
 
 type Redis struct {

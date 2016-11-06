@@ -2,7 +2,7 @@ package handler
 
 import (
 	"encoding/xml"
-	"io/ioutil"
+	//	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode"
+
+	"github.com/zhutingle/gotrix/global"
 )
 
 var funcReg *regexp.Regexp = regexp.MustCompile("^(\\w+)\\((.*)\\)$")
@@ -192,7 +194,8 @@ func readXmlFolder(simpleHandler SimpleHandler, folder string) {
 func readXmlFile(xmlFileName string, result *Result) {
 
 	// 读取文件内容
-	content, err := ioutil.ReadFile(xmlFileName)
+	content, err := global.ReadConfigFile(xmlFileName)
+	//	content, err := ioutil.ReadFile(xmlFileName)
 	if err != nil {
 		log.Fatal(err)
 		return
