@@ -40,7 +40,7 @@
 		<job>hset('GOTRIX_SESSION',${session},${json})</job>
 
 		<job result="param">Jset('userid',${id})</job>
-		<job>SyncCall(2003,${param})</job>
+		<job test="Eq(${userInfo},null)">SyncCall(2003,${param})</job>
 
 		<job>Jget(${login},'session','x','y')</job>
 	</func>
