@@ -88,7 +88,7 @@
 		<job result="keyword2">Jset('color','#173177','value',${nick})</job>
 		<job result="remark">Jset('color','#173177','value','感谢加入和风坊')</job>
 		<job result="data">Jset('first',${first},'keyword1',${keyword1},'keyword2',${keyword2},'remark',${remark})</job>
-		<job result="openUrl">Sprintf('http://thribu.randiancx.com/order.html?id=%v',${orderid})</job>
+		<job result="openUrl">Sprintf('http://thribu.randiancx.com/store.html')</job>
 		<job result="param">Jset('touser',${openid},'template_id','hMIhBBsAE8GwDrgLXGM35j96ekxnC0A_1p34X9xw4yM','url',${openUrl},'data',${data})</job>
 		<job result="resp">HttpPost(${url},${param})</job>
 
