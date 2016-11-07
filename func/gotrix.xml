@@ -24,13 +24,19 @@
 		<job result="wechatReturn"><![CDATA[https://api.weixin.qq.com/sns/oauth2/access_token?appid=wx32e598477c7d1ef8&secret=2fb49c36deeae54286a434be2777d387&code=${code}&grant_type=authorization_code]]></job>
 		<job result="openid">Jget(${wechatReturn},'openid')</job>
 		<job>Eq(${openid},null,'微信登陆时出错，请稍后再试')</job>
+		<job result="nickname">Jget(${wechatReturn},'nickname')</job>
+		<job result="headimgurl">Jget(${wechatReturn},'headimgurl')</job>
+		<job result="country">Jget(${wechatReturn},'country')</job>
+		<job result="province">Jget(${wechatReturn},'province')</job>
+		<job result="city">Jget(${wechatReturn},'city')</job>
+		<job result="sex">Jget(${wechatReturn},'sex')</job>
 
 		<job result="userInfo" one="true">select id,session oldSession from user where openid = ${openid}</job>
 		<job result="oldSession" test="Neq(${userInfo},null,'')">Jget(${userInfo},'oldSession')</job>
 		<job test="Neq(${oldSession},null,'')">hdel('GOTRIX_SESSION',${oldSession})</job>
 
 		<job result="id" test="Neq(${userInfo},null,'')">Jget(${userInfo},'id')</job>
-		<job result="id" test="Eq(${userInfo},null,'')">insert into user(id,openid,parent) values(null,${openid},${parent})</job>
+		<job result="id" test="Eq(${userInfo},null,'')">insert into user(id,openid,parent,nick,portrait,sex,country,province,city) values(null,${openid},${parent},${nickname},${headimgurl},${sex},${country},${province},${city})</job>
 
 		<job result="param">Jset('userid',${id})</job>
 		<job test="Eq(${userInfo},null)">SyncCall(2003,${param})</job>
