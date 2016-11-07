@@ -540,8 +540,7 @@ func (this *handleFunc) initCall() {
 		funcId, _ := global.ToInt64(args[1])
 		for _, v := range ja {
 			checkedParams := &global.CheckedParams{Func: int(funcId), V: v.(map[string]interface{})}
-			response, gErr = this.simpleHandler.Handle(checkedParams)
-			fmt.Println(response)
+			this.simpleHandler.Handle(checkedParams)
 		}
 		return
 	}

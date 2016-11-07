@@ -10,7 +10,7 @@
 
 	<func id="201" name="selectAllOrders" des="查询全部订单">
 
-		<job>select orders.id,orders.money,orders.time,dicti.text,shopping.attach,shopping.count,goods.`name`,goods.icon
+		<job>select orders.id,orders.money,orders.time,dicti.text,shopping.attach,shopping.count,goods.id goodid,goods.`name`,goods.icon
 
 			from orders,dicti,shopping,goods
 			where
@@ -28,7 +28,7 @@
 	<func id="202" name="selectStateOrder" des="查询某个状态的订单">
 		<int name="state" must="true" />
 
-		<job>select orders.id,orders.money,orders.time,dicti.text,shopping.attach,shopping.count,goods.`name`,goods.icon
+		<job>select orders.id,orders.money,orders.time,dicti.text,shopping.attach,shopping.count,goods.id goodid,goods.`name`,goods.icon
 
 			from orders,dicti,shopping,goods
 			where
