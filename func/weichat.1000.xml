@@ -157,11 +157,11 @@
 			from orders,shopping,goods
 			where orders.state = 2 and orders.id = shopping.orderid and shopping.goodid = goods.id group by orders.id order by orders.id
 		</job>
-		<job result="fileName">Tformat('20060102')</job>
-		<job result="filePath">ToXls(${orderData},'id,name,tel,detail,goods,orderno',${fileName})</job>
-
 		<job result="maxIdOrder">JAget(${orderData},-1)</job>
 		<job>Eq(${maxIdOrder},null,'今日没有订单记录')</job>
+
+		<job result="fileName">Tformat('20060102')</job>
+		<job result="filePath">ToXls(${orderData},'id,name,tel,detail,goods,orderno',${fileName})</job>
 
 		<job result="maxId" test="Neq(${maxIdOrder},null)">Jget(${maxIdOrder},'id')</job>
 		<job result="orderCount" test="Neq(${maxIdOrder},null)"><![CDATA[update orders set state = 3 where state = 2 and id <= ${maxId}]]></job>
