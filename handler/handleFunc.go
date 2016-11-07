@@ -522,6 +522,7 @@ func (this *handleFunc) initHttp() {
  * 定义所有调用其它相关的扩展方法
  */
 func (this *handleFunc) initCall() {
+	// 同步调用
 	this.methodMap["SyncCall"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
 
 		var funcId = args[0].(int64)
@@ -529,5 +530,19 @@ func (this *handleFunc) initCall() {
 
 		checkedParams := &global.CheckedParams{Func: int(funcId), V: param}
 		return this.simpleHandler.Handle(checkedParams)
+	}
+	// 数组循环调用
+	this.methodMap["JAeachCall"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		if args[0] == nil {
+			return nil, nil
+		}
+		ja := args[0].([]interface{})
+		funcId, _ := global.ToInt64(args[1])
+		for _, v := range ja {
+			checkedParams := &global.CheckedParams{Func: int(funcId), V: v.(map[string]interface{})}
+			response, gErr = this.simpleHandler.Handle(checkedParams)
+			fmt.Println(response)
+		}
+		return
 	}
 }

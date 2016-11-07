@@ -67,8 +67,7 @@ func main() {
 
 	//	gotrixHandler = handler.SimpleHandler{}
 	//	gotrixHandler.Init()
-	//	checkedParams := &global.CheckedParams{Func: 2003, V: make(map[string]interface{})}
-	//	checkedParams.V["userid"] = 2
+	//	checkedParams := &global.CheckedParams{Func: 301, V: make(map[string]interface{})}
 	//	response, err := gotrixHandler.Handle(checkedParams)
 	//	log.Println(response)
 	//	log.Println(err)

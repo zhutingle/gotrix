@@ -30,10 +30,20 @@
 		<job>Jset('success',true)</job>
 	</func>
 
-	<func id="301" name="payConfirm" des="收货并且经过退货期" private="true">
-		<int name="orderid" must="true" />
+	<func id="301" name="hourlyConfirmSign" des="整点判断未收货订单是否已签收" private="true" cron="0 10 * * * *">
+		<job result="noSigns">select orders.id,dicti.des,orders.waybill from orders,dicti where orders.state = 4 and dicti.dictid = 8 and orders.wayname = dicti.`value`;</job>
+		<job>JAeachCall(${noSigns},304)</job>
+	</func>
 
-		<job>update user,recode set recode.state = 1,user.score = user.score + recode.score where recode.orderid = ${orderid} and recode.state = 0 and recode.userid = user.id</job>
+	<func id="304" name="payConfirm" des="收货并且经过退货期" private="true">
+		<int name="id" must="true" />
+		<string name="des" must="true" />
+		<string name="waybill" must="true" />
+
+		<job result="wayquery"><![CDATA[http://m.kuaidi100.com/query?type=${des}&postid=${waybill}&id=1&valicode=&temp=0.2903927791300549]]></job>
+		<job result="state">Jget(${wayquery},'state')</job>
+		<job test="Eq(${state},'3')">update orders set state = 5 where id = ${id}</job>
+		<!-- <job>update user,recode set recode.state = 1,user.score = user.score + recode.score where recode.orderid = ${orderid} and recode.state = 0 and recode.userid = user.id</job> -->
 	</func>
 
 	<func id="302" name="selectRecode" des="查询分成记录">
