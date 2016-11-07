@@ -53,7 +53,7 @@
 		<job>hset('GOTRIX_SESSION',${session},${json})</job>
 
 		<job result="result">Jget(${login},'session','x','y')</job>
-		<job result="pInfo" one="true" test="Neq(${userInfo},null)">select nick,portrait from user where id = ${parent}</job>
+		<job result="pInfo" one="true" test="Eq(${userInfo},null)">select nick,portrait from user where id = ${parent}</job>
 		<job result="result">Jset(${result},'pInfo',${pInfo})</job>
 	</func>
 
