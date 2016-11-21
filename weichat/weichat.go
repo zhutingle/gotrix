@@ -212,6 +212,58 @@ func WxSendRedPack(param map[string]interface{}) (returnMap map[string]interface
 	return
 }
 
+func WxCertRequest(param map[string]interface{}, url string) (returnMap map[string]interface{}) {
+
+	if _tlsConfig == nil {
+
+		cert, err := tls.LoadX509KeyPair(global.Config.WxCert.Cert_pem, global.Config.WxCert.Key_pem)
+		if err != nil {
+			fmt.Println("load wechat keys fail", err)
+			return nil
+		}
+
+		cData, err := ioutil.ReadFile(global.Config.WxCert.RootCA_Path)
+		if err != nil {
+			fmt.Println("read wechat ca fail", err)
+			return nil
+		}
+
+		pool := x509.NewCertPool()
+		pool.AppendCertsFromPEM(cData)
+		_tlsConfig = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			RootCAs:      pool,
+		}
+	}
+
+	if _tlsConfig == nil {
+		return
+	}
+
+	bytes_req := toXmlBytes(param)
+
+	tr := &http.Transport{TLSClientConfig: _tlsConfig}
+	client := &http.Client{Transport: tr}
+	resp, _err := client.Post(
+		url,
+		"text/xml",
+		bytes.NewBuffer(bytes_req))
+
+	if _err != nil {
+		fmt.Printf("调用微信url[%v]时出现错误，原因：%v\n", url, _err)
+		return
+	}
+
+	length := resp.ContentLength
+	body := make([]byte, length)
+	resp.Body.Read(body)
+	defer resp.Body.Close()
+
+	returnMap = fromXmlBytes(body)
+
+	return
+}
+
 func toXmlBytes(param map[string]interface{}) (xmlBytes []byte) {
 	buffer := bytes.Buffer{}
 	buffer.WriteString("<xml>")

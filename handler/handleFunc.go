@@ -381,6 +381,10 @@ func (this *handleFunc) initSpecial() {
 		response = weichat.WxSendRedPack(args[0].(map[string]interface{}))
 		return
 	}
+	this.methodMap["WxCertRequest"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		response = weichat.WxCertRequest(args[0].(map[string]interface{}), args[1].(string))
+		return
+	}
 }
 
 /**

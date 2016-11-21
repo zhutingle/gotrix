@@ -173,4 +173,36 @@
 		<job>SendEmail(${subject},${body},${receiver},${filePath})</job>
 	</func>
 
+	<func id="1005" name="weichatRefund" des="微信退款接口">
+		<int name="orderId" must="true" />
+
+		<job result="today">Tformat('20060102')</job>
+		<!-- 判断订单是否符合退款要求 -->
+		<job result="orderInfo" one="true">select orderno,state,refundno,cast(orders.money*100 as SIGNED) total from orders where id = ${orderId}</job>
+		<job result="state">Jget(${orderInfo},'state')</job>
+		<job>Eq(${orderInfo},null,'此订单不存在。')</job>
+		<job>Neq(${state},2,'您的订单已经配货或已经发货，暂时不能退款，请收到商品之后再联系客服退货退款。')</job>
+
+		<!-- 构造微信退款接口所需参数并且进行微信签名 -->
+		<job result="appid">Config('Appid')</job>
+		<job result="mch_id">Config('Mch_id')</job>
+		<job result="nonce_str">Rstring(32)</job>
+		<job result="out_trade_no">Jget(${orderInfo},'orderno')</job>
+		<job result="refundno">Jget(${orderInfo},'refundno')</job>
+		<job result="out_refund_no" test="Eq(${refundno},null)">Sprintf('%v%05v',${today},${orderId})</job>
+		<job test="Eq(${refundno},null)">update orders set refundno = ${out_refund_no} where id = ${orderId}</job>
+		<job result="out_refund_no" test="Neq(${refundno},null)">Jget(${orderInfo},'refundno')</job>
+		<job result="total_fee">Jget(${orderInfo},'total')</job>
+		<job result="refund_fee">Jget(${orderInfo},'total')</job>
+		<job result="weichatParam">Jset('appid',${appid},'mch_id',${mch_id},'device_info','WEB','nonce_str',${nonce_str},'sign_type','MD5','out_trade_no',${out_trade_no},'out_refund_no',${out_refund_no},'total_fee',${total_fee},'refund_fee',${refund_fee},'op_user_id',${mch_id})</job>
+		<job result="key">Config('Key')</job>
+		<job result="sign">WeichatSign(${weichatParam},${key})</job>
+		<job result="weichatParam">Jset(${weichatParam},'sign',${sign})</job>
+
+		<!-- 调用微信退款接口 -->
+		<job result="weichatResult">WxCertRequest(${weichatParam},'https://api.mch.weixin.qq.com/secapi/pay/refund')</job>
+
+		<!-- 判断微信退款接口是否成功返回，成功返回后修改状态 -->
+	</func>
+
 </funcs>
