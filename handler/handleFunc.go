@@ -331,7 +331,9 @@ func (this *handleFunc) initSpecial() {
 		// 第一步：对 key 进行升序排序
 		sorted_keys := make([]string, 0)
 		for k, _ := range mReq {
-			sorted_keys = append(sorted_keys, k)
+			if k != "sign" {
+				sorted_keys = append(sorted_keys, k)
+			}
 		}
 		sort.Strings(sorted_keys)
 

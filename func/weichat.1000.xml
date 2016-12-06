@@ -31,9 +31,9 @@
 
 		<!-- 请求微信服务器的统一下单接口 -->
 		<job result="weichatResult">WeichatPay(${weichatParam})</job>
-		<job result="returnCode">Jget(${weichatResult},'return_code')</job>
+		<job result="resultCode">Jget(${weichatResult},'result_code')</job>
 		<job result="returnMsg">Jget(${weichatResult},'return_msg')</job>
-		<job>Eq(${returnCode},'FAIL',${returnMsg})</job>
+		<job>Eq(${resultCode},'FAIL',${returnMsg})</job>
 
 		<!-- 验证接口返回的签名是否正确 -->
 		<job result="sign">Jget(${weichatResult},'sign')</job>
@@ -194,15 +194,28 @@
 		<job result="out_refund_no" test="Neq(${refundno},null)">Jget(${orderInfo},'refundno')</job>
 		<job result="total_fee">Jget(${orderInfo},'total')</job>
 		<job result="refund_fee">Jget(${orderInfo},'total')</job>
-		<job result="weichatParam">Jset('appid',${appid},'mch_id',${mch_id},'device_info','WEB','nonce_str',${nonce_str},'sign_type','MD5','out_trade_no',${out_trade_no},'out_refund_no',${out_refund_no},'total_fee',${total_fee},'refund_fee',${refund_fee},'op_user_id',${mch_id})</job>
+		<job result="weichatParam">Jset('appid',${appid},'mch_id',${mch_id},'device_info','WEB','nonce_str',${nonce_str},'sign_type','MD5','out_trade_no',${out_trade_no},'out_refund_no',${out_refund_no},'total_fee',${total_fee},'refund_fee',${refund_fee},'op_user_id',${mch_id},'refund_channel','ORIGINAL')</job>
 		<job result="key">Config('Key')</job>
 		<job result="sign">WeichatSign(${weichatParam},${key})</job>
 		<job result="weichatParam">Jset(${weichatParam},'sign',${sign})</job>
 
 		<!-- 调用微信退款接口 -->
 		<job result="weichatResult">WxCertRequest(${weichatParam},'https://api.mch.weixin.qq.com/secapi/pay/refund')</job>
+		<!-- <job result="weichatResult">Jset('sign','9E816A14643741BE12B7878EC8190164','result_code','SUCCESS','transaction_id','4005262001201612061965835562','return_code','SUCCESS','appid','wx32e598477c7d1ef8','nonce_str','Ecl7xK79LTbN15fC','out_trade_no','2016120600063','out_refund_no','2016120600063','refund_id','2005262001201612060630094593','refund_channel','ORIGINAL','return_msg','OK','mch_id','1384831502')</job> -->
 
-		<!-- 判断微信退款接口是否成功返回，成功返回后修改状态 -->
+		<!-- 如果微信退款接口返回失败，则提示 -->
+		<!-- <job result="returnCode">Jget(${weichatResult},'return_code')</job> -->
+		<!-- <job result="returnMsg">Jget(${weichatResult},'return_msg')</job> -->
+		<!-- <job>Eq(${returnCode},'FAIL',${returnMsg})</job> -->
+
+		<!-- 验证接口返回的签名是否正确，若不正确，则提示 -->
+		<!-- <job result="sign">Jget(${weichatResult},'sign')</job> -->
+		<!-- <job result="localSign">WeichatSign(${weichatResult},${key})</job> -->
+		<!-- <job>Jset('localSign',${localSign},'sign',${sign})</job> -->
+		<!-- <job>Neq(${localSign},${sign},'在微信退款时出现异常，请稍候再试。')</job> -->
+
+		<!-- 修改状态 -->
+		<!-- <job>Jset(${weichatResult},'test','test')</job> -->
 	</func>
 
 </funcs>
