@@ -212,6 +212,34 @@ func WxSendRedPack(param map[string]interface{}) (returnMap map[string]interface
 	return
 }
 
+func WxRequest(param map[string]interface{}, url string) (returnMap map[string]interface{}) {
+
+	bytes_req := toXmlBytes(param)
+	req, err := http.NewRequest("POST", url, bytes.NewReader(bytes_req))
+	if err != nil {
+		fmt.Println("New Http Request 发生错误，原因：", err)
+		return
+	}
+	req.Header.Set("Accpt", "application/xml")
+	req.Header.Set("Content-type", "application/xml;charset=utf-8")
+
+	c := http.Client{}
+	resp, _err := c.Do(req)
+	if _err != nil {
+		fmt.Println("微信调用接口时发生错误，原因：", _err)
+		return
+	}
+
+	length := resp.ContentLength
+	body := make([]byte, length)
+	resp.Body.Read(body)
+	defer resp.Body.Close()
+
+	returnMap = fromXmlBytes(body)
+
+	return returnMap
+}
+
 func WxCertRequest(param map[string]interface{}, url string) (returnMap map[string]interface{}) {
 
 	if _tlsConfig == nil {
@@ -276,11 +304,11 @@ func toXmlBytes(param map[string]interface{}) (xmlBytes []byte) {
 
 func fromXmlBytes(xmlBytes []byte) (result map[string]interface{}) {
 
-	xmlReg := regexp.MustCompile("<(\\w*)><\\!\\[CDATA\\[(.*?)\\]\\]></\\w*>")
+	xmlReg := regexp.MustCompile("<(\\w*)>(<\\!\\[CDATA\\[)?([^<>]*?)(\\]\\]>)?</\\w*>")
 	allSub := xmlReg.FindAllSubmatch(xmlBytes, -1)
 	result = make(map[string]interface{}, 0)
 	for i := 0; i < len(allSub); i++ {
-		result[string(allSub[i][1])] = string(allSub[i][2])
+		result[string(allSub[i][1])] = string(allSub[i][3])
 	}
 
 	return

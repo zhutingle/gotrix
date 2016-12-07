@@ -30,16 +30,15 @@
 		<job>Jset(${weichatParam},'sign',${sign})</job>
 
 		<!-- 请求微信服务器的统一下单接口 -->
-		<job result="weichatResult">WeichatPay(${weichatParam})</job>
+		<job result="weichatResult">WxRequest(${weichatParam},'https://api.mch.weixin.qq.com/pay/unifiedorder')</job>
 		<job result="resultCode">Jget(${weichatResult},'result_code')</job>
 		<job result="returnMsg">Jget(${weichatResult},'return_msg')</job>
 		<job>Eq(${resultCode},'FAIL',${returnMsg})</job>
 
 		<!-- 验证接口返回的签名是否正确 -->
 		<job result="sign">Jget(${weichatResult},'sign')</job>
-		<job>Jset(${weichatResult},'sign',null)</job>
 		<job result="localSign">WeichatSign(${weichatResult},${Key})</job>
-		<job>Jset('localSign',${localSign},'sign',${sign})</job>
+		<job>Neq(${localSign},${sign},'微信返回签名错误，请稍候重试。')</job>
 
 		<!-- 构建微信HTML页面所需要参数 -->
 		<job result="timeStamp">Tsecond()</job>
@@ -59,7 +58,6 @@
 
 		<!-- 验证签名是否正确 -->
 		<job result="sign">Jget(${weichat},'sign')</job>
-		<job>Jset(${weichat},'sign',null)</job>
 		<job result="Key">Config('Key')</job>
 		<job result="localSign">WeichatSign(${weichat},${Key})</job>
 		<job test="Neq(${sign},${localSign})"><![CDATA[Return('<xml><return_code>FAIL</return_code><return_msg>签名sign错误</return_msg></xml>')]]></job>
@@ -132,11 +130,18 @@
 
 		<job test="Eq(${exchangeResult},null)">update exchange set state = 2 where userid = ${userid} and id = ${exchangeId}</job>
 		<job>Eq(${exchangeResult},null,'向微信服务器请求红包接口时异常，请稍后再试')</job>
+
 		<!-- 判断接口返回的结果是否正确 -->
-		<job result="return_code">Jget(${exchangeResult},'return_code')</job>
+		<job result="result_code">Jget(${exchangeResult},'result_code')</job>
 		<job result="return_msg">Jget(${exchangeResult},'return_msg')</job>
-		<job test="Neq(${return_code},'SUCCESS')">update exchange set state = 2 where userid = ${userid} and id = ${exchangeId}</job>
 		<job>Neq(${return_code},'SUCCESS',${return_msg})</job>
+
+		<!-- 验证接口返回的签名是否正确 -->
+		<job result="sign">Jget(${weichatResult},'sign')</job>
+		<job result="localSign">WeichatSign(${weichatResult},${Key})</job>
+		<job>Neq(${localSign},${sign},'微信返回签名错误，请稍候重试。')</job>
+
+		<job test="Neq(${result_code},'SUCCESS')">update exchange set state = 2 where userid = ${userid} and id = ${exchangeId}</job>
 
 		<job>Jset('success',1)</job>
 
@@ -201,21 +206,51 @@
 
 		<!-- 调用微信退款接口 -->
 		<job result="weichatResult">WxCertRequest(${weichatParam},'https://api.mch.weixin.qq.com/secapi/pay/refund')</job>
-		<!-- <job result="weichatResult">Jset('sign','9E816A14643741BE12B7878EC8190164','result_code','SUCCESS','transaction_id','4005262001201612061965835562','return_code','SUCCESS','appid','wx32e598477c7d1ef8','nonce_str','Ecl7xK79LTbN15fC','out_trade_no','2016120600063','out_refund_no','2016120600063','refund_id','2005262001201612060630094593','refund_channel','ORIGINAL','return_msg','OK','mch_id','1384831502')</job> -->
 
 		<!-- 如果微信退款接口返回失败，则提示 -->
-		<!-- <job result="returnCode">Jget(${weichatResult},'return_code')</job> -->
-		<!-- <job result="returnMsg">Jget(${weichatResult},'return_msg')</job> -->
-		<!-- <job>Eq(${returnCode},'FAIL',${returnMsg})</job> -->
+		<job result="resultCode">Jget(${weichatResult},'result_code')</job>
+		<job result="returnMsg">Jget(${weichatResult},'return_msg')</job>
+		<job>Eq(${resultCode},'FAIL',${returnMsg})</job>
 
 		<!-- 验证接口返回的签名是否正确，若不正确，则提示 -->
-		<!-- <job result="sign">Jget(${weichatResult},'sign')</job> -->
-		<!-- <job result="localSign">WeichatSign(${weichatResult},${key})</job> -->
-		<!-- <job>Jset('localSign',${localSign},'sign',${sign})</job> -->
-		<!-- <job>Neq(${localSign},${sign},'在微信退款时出现异常，请稍候再试。')</job> -->
+		<job result="sign">Jget(${weichatResult},'sign')</job>
+		<job result="localSign">WeichatSign(${weichatResult},${key})</job>
+		<job>Neq(${localSign},${sign},'在微信退款时签名错误，请稍候再试。')</job>
 
-		<!-- 修改状态 -->
-		<!-- <job>Jset(${weichatResult},'test','test')</job> -->
+		<!-- 修改状态为退款中 -->
+		<job>update orders set state = 6 where id = ${orderId}</job>
+	</func>
+
+	<func id="1006" name="weichatRefundQuery" des="微信退款查询" private="true">
+		<int name="id" must="true" />
+		<string name="refundno" len="0-30" must="true" />
+
+		<job result="appid">Config('Appid')</job>
+		<job result="mch_id">Config('Mch_id')</job>
+		<job result="nonce_str">Rstring(32)</job>
+		<job result="weichatParam">Jset('appid',${appid},'mch_id',${mch_id},'device_info','WEB','nonce_str',${nonce_str},'sign_type','MD5','out_refund_no',${refundno})</job>
+		<job result="key">Config('Key')</job>
+		<job result="sign">WeichatSign(${weichatParam},${key})</job>
+		<job result="weichatParam">Jset(${weichatParam},'sign',${sign})</job>
+
+		<!-- 调用接口并且判断接口返回是否正确 -->
+		<job result="weichatResult">WxRequest(${weichatParam},'https://api.mch.weixin.qq.com/pay/refundquery')</job>
+		<job result="resultCode">Jget(${weichatResult},'result_code')</job>
+		<job result="returnMsg">Jget(${weichatResult},'return_msg')</job>
+		<job>Eq(${resultCode},'FAIL',${returnMsg})</job>
+
+		<!-- 验证签名 -->
+		<job result="sign">Jget(${weichatResult},'sign')</job>
+		<job result="localSign">WeichatSign(${weichatResult},${key})</job>
+		<job>Neq(${localSign},${sign},'在微信退款查询时签名错误，请稍候再试。')</job>
+
+		<!-- 修改状态为已退款 -->
+		<job>update orders set state = 7 where id = ${id}</job>
+	</func>
+
+	<func id="1007" name="weichatRefundAutoQueryAll" des="整点自动查询所有微信退款状态，并自动更新" private="true" cron="0 20 * * * *">
+		<job result="orders">select id,cast(refundno as char) refundno from orders where state = 6</job>
+		<job>JAeachCall(${orders},1006)</job>
 	</func>
 
 </funcs>

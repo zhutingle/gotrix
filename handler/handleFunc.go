@@ -383,6 +383,10 @@ func (this *handleFunc) initSpecial() {
 		response = weichat.WxSendRedPack(args[0].(map[string]interface{}))
 		return
 	}
+	this.methodMap["WxRequest"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		response = weichat.WxRequest(args[0].(map[string]interface{}), args[1].(string))
+		return
+	}
 	this.methodMap["WxCertRequest"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
 		response = weichat.WxCertRequest(args[0].(map[string]interface{}), args[1].(string))
 		return
@@ -544,10 +548,17 @@ func (this *handleFunc) initCall() {
 		}
 		ja := args[0].([]interface{})
 		funcId, _ := global.ToInt64(args[1])
+
+		result := make([]interface{}, 0)
 		for _, v := range ja {
 			checkedParams := &global.CheckedParams{Func: int(funcId), V: v.(map[string]interface{})}
-			this.simpleHandler.Handle(checkedParams)
+			res, ge := this.simpleHandler.Handle(checkedParams)
+			if ge == nil {
+				result = append(result, res)
+			} else {
+				result = append(result, ge)
+			}
 		}
-		return
+		return result, nil
 	}
 }
