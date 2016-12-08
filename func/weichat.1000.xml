@@ -183,7 +183,7 @@
 
 		<job result="today">Tformat('20060102')</job>
 		<!-- 判断订单是否符合退款要求 -->
-		<job result="orderInfo" one="true">select orderno,state,refundno,cast(orders.money*100 as SIGNED) total from orders where id = ${orderId}</job>
+		<job result="orderInfo" one="true">select orderno,state,refundno,cast(orders.money*100 as SIGNED) total from orders where id = ${orderId} and userid = ${userid}</job>
 		<job result="state">Jget(${orderInfo},'state')</job>
 		<job>Eq(${orderInfo},null,'此订单不存在。')</job>
 		<job>Neq(${state},2,'您的订单已经配货或已经发货，暂时不能退款，请收到商品之后再联系客服退货退款。')</job>
