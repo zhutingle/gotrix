@@ -112,8 +112,8 @@
 	<func id="14" name="mainPage" des="主页数据" self="true">
 		<int name="categoryid" />
 
-		<job result="list" test="Eq(${categoryid},null)">select id,main,name,price from goods where main is not null</job>
-		<job result="list" test="Neq(${categoryid},null)">select id,main,name,price from goods where main is not null and categoryid = ${categoryid}</job>
+		<job result="list" test="Eq(${categoryid},null)">select id,main,icon,name,price from goods where main is not null</job>
+		<job result="list" test="Neq(${categoryid},null)">select id,main,icon,name,price from goods where main is not null and categoryid = ${categoryid}</job>
 		<job>Jset('list',${list})</job>
 	</func>
 
@@ -242,6 +242,14 @@
 		<int name="id" must="true" />
 
 		<job>update orders set money = (select sum(count*price) from shopping,goods where shopping.goodid = goods.id and shopping.userid = ${userid} and shopping.orderid = ${id}) where userid = ${userid} and id = ${id};</job>
+	</func>
+
+	<func id="30" name="mainPageByKeyword" des="主页数据" self="true">
+		<string name="keyword" len="0-128" must="true" />
+
+		<job result="likeKeyword">Sprintf('%%%s%%',${keyword})</job>
+		<job result="list">select id,main,icon,name,price from goods where main is not null and name like ${likeKeyword}</job>
+		<job>Jset('list',${list})</job>
 	</func>
 
 </funcs>
