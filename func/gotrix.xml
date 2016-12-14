@@ -117,9 +117,16 @@
 		<job>Jset('list',${list})</job>
 	</func>
 
-	<func id="15" name="getGood" des="获取某个产品的详情" self="true">
+	<func id="15" name="getGood" des="获取某个产品的详情">
+		<int name="id" must="true" />
 
-		<job one="true">select * from goods where id = ${id}</job>
+		<!-- 查找结果 -->
+		<job result="good" one="true">select * from goods where id = ${id}</job>
+		<job result="collection" one="true">select * from collection where userid = ${userid} and goodid = ${id}</job>
+		<!-- 记录浏览记录 -->
+		<job>insert into history values(null,${userid},${id},now())</job>
+		<!-- 返回结果 -->
+		<job>Jset(${good},'collection',${collection})</job>
 	</func>
 
 	<func id="16" name="insertShopping" des="添加到购物车">
@@ -251,5 +258,28 @@
 		<job result="list">select id,main,icon,name,price from goods where main is not null and name like ${likeKeyword}</job>
 		<job>Jset('list',${list})</job>
 	</func>
+
+	<!-- 收藏的商品相关接口 -->
+	<func id="31" name="addCollection" des="增加收藏的商品">
+		<int name="goodid" must="true" />
+
+		<job result="collection" one="true">select * from collection where userid = ${userid} and goodid = ${goodid}</job>
+		<job result="insert" test="Eq(${collection},null)">insert into collection values(${userid},${goodid},now())</job>
+		<job result="delete" test="Neq(${collection},null)">delete from collection where userid = ${userid} and goodid = ${goodid}</job>
+		<job>Jset('insert',${insert},'delete',${delete})</job>
+	</func>
+
+	<func id="33" name="selectCollection" des="查询收藏的商品">
+
+		<job>select goods.id,goods.name,goods.des,goods.icon,goods.price from collection,goods where userid = 2 and collection.goodid = goods.id</job>
+	</func>
+	<!-- 结束 -->
+
+	<!-- 浏览足迹的相关接口 -->
+	<func id="36" name="selectHistory" des="查询浏览记录">
+
+		<job>select goods.id,goods.icon,goods.name,min(now() - history.time) as space from history,goods where userid = ${userid} and history.goodid = goods.id group by history.goodid order by space limit 0,20</job>
+	</func>
+	<!-- 结束 -->
 
 </funcs>
