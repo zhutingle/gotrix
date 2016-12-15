@@ -248,9 +248,4 @@
 		<job>update orders set state = 7 where id = ${id}</job>
 	</func>
 
-	<func id="1007" name="weichatRefundAutoQueryAll" des="整点自动查询所有微信退款状态，并自动更新" private="true" cron="0 20 * * * *">
-		<job result="orders">select id,cast(refundno as char) refundno from orders where state = 6</job>
-		<job>JAeachCall(${orders},1006)</job>
-	</func>
-
 </funcs>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<funcs>
+
+	<func id="3000" name="hourlyConfirmSign" des="整点判断未收货订单是否已签收" private="true" cron="0 10 * * * *">
+		<!-- 查询所有已经发货的订单，如果物流信息显示已签收，则将状态设置为已签收 -->
+		<job result="noSigns">select orders.id,dicti.des,orders.waybill from orders,dicti where orders.state = 4 and dicti.dictid = 8 and orders.wayname = dicti.`value`;</job>
+		<job>JAeachCall(${noSigns},304)</job>
+
+		<!-- 查询所有退款中的订单，如果微信退款状态显示为退款成功，成更新状态为已退款 -->
+		<job result="orders">select id,cast(refundno as char) refundno from orders where state = 6</job>
+		<job>JAeachCall(${orders},1006)</job>
+	</func>
+
+</funcs>

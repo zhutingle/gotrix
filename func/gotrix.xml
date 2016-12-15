@@ -173,8 +173,8 @@
 	<func id="21" name="selectOrder" des="查询订单">
 		<int name="orderid" must="true" />
 
-		<job result="order" one="true">select * from orders where userid = ${userid} and id = ${orderid}</job>
-		<job result="shoppings">select goods.name,goods.icon,goods.price,shopping.attach,shopping.count from shopping,goods where userid = ${userid} and orderid = ${orderid} and goodid = goods.id</job>
+		<job result="order" one="true">select orders.*,dicti.text from orders,dicti where userid = ${userid} and id = ${orderid} and dicti.dictid = 1 and orders.state = dicti.value</job>
+		<job result="shoppings">select goods.id,goods.name,goods.icon,goods.price,shopping.attach,shopping.count from shopping,goods where userid = ${userid} and orderid = ${orderid} and goodid = goods.id</job>
 		<job result="address" one="true">select address.* from address,`user` where userid = ${userid} and userid = `user`.id and address.id = `user`.address</job>
 
 		<job result="wayid">Jget(${order},'wayname')</job>
