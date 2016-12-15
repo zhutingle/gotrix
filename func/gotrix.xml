@@ -271,7 +271,7 @@
 
 	<func id="33" name="selectCollection" des="查询收藏的商品">
 
-		<job>select goods.id,goods.name,goods.des,goods.icon,goods.price from collection,goods where userid = 2 and collection.goodid = goods.id</job>
+		<job>select goods.id,goods.name,goods.des,goods.icon,goods.price from collection,goods where userid = ${userid} and collection.goodid = goods.id</job>
 	</func>
 	<!-- 结束 -->
 
