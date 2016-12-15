@@ -5,7 +5,7 @@
 
 		<job result="userInfo" one="true">select user.id,nick,portrait,totalbuy,store,score,parent,count(distinct collection.goodid) collectionCount,count(distinct history.goodid) historyCount from user,collection,history where user.id = ${userid} and user.id = collection.userid and user.id = history.userid</job>
 		<job result="parentInfo" one="true">select user2.nick from user user1,user user2 where user1.id = ${userid} and user1.parent = user2.id</job>
-		<job result="ordersInfo">select state,count(1) count from orders where userid = 2 and state in (1,3,4,6) group by state</job>
+		<job result="ordersInfo">select state,count(1) count from orders where userid = ${userid} and (state = 1 or state = 3 or state = 4 or state = 6) group by state</job>
 		<job>Jset('userInfo',${userInfo},'parentInfo',${parentInfo},'ordersInfo',${ordersInfo})</job>
 	</func>
 
