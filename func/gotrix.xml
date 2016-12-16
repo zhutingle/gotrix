@@ -40,7 +40,7 @@
 
 		<!-- 检查 openid 是否已注册，未注册则注册，已注册则更新。 -->
 		<job result="userInfo" one="true">select id,session oldSession from user where openid = ${openid}</job>
-		<job result="id" test="Eq(${userInfo},null,'')">insert into user(id,openid,parent,nick,portrait,sex,country,province,city) values(null,${openid},${parent},${nickname},${headimgurl},${sex},${country},${province},${city})</job>
+		<job result="id" test="Eq(${userInfo},null,'')">insert into user(id,openid,parent,nick,portrait,sex,country,province,city,time) values(null,${openid},${parent},${nickname},${headimgurl},${sex},${country},${province},${city},now())</job>
 		<job result="id" test="Neq(${userInfo},null,'')">Jget(${userInfo},'id')</job>
 		<job result="is" test="Neq(${userInfo},null,'')">update user set nick=${nickname},portrait=${headimgurl},sex=${sex},country=${country},province=${province},city=${city} where id = ${id}</job>
 
@@ -114,8 +114,8 @@
 		<int name="start" must="true" />
 		<int name="end" must="true" />
 
-		<job result="list" test="Eq(${categoryid},null)">select id,main,icon,name,price from goods where main is not null limit ${start},${end}</job>
-		<job result="list" test="Neq(${categoryid},null)">select id,main,icon,name,price from goods where main is not null and categoryid = ${categoryid} limit ${start},${end}</job>
+		<job result="list" test="Eq(${categoryid},null)">select id,main,icon,name,price from goods where main is not null order by time desc limit ${start},${end}</job>
+		<job result="list" test="Neq(${categoryid},null)">select id,main,icon,name,price from goods where main is not null and categoryid = ${categoryid} order by time desc limit ${start},${end}</job>
 		<job>Jset('list',${list})</job>
 	</func>
 
