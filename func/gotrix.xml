@@ -280,7 +280,7 @@
 	<!-- 浏览足迹的相关接口 -->
 	<func id="36" name="selectHistory" des="查询浏览记录">
 
-		<job>select goods.id,goods.icon,goods.name,min(now() - history.time) as space from history,goods where userid = ${userid} and history.goodid = goods.id group by history.goodid order by space limit 0,20</job>
+		<job>select goods.id,goods.icon,goods.name,UNIX_TIMESTAMP(now()) - max(UNIX_TIMESTAMP(history.time)) as space from history,goods where userid = ${userid} and history.goodid = goods.id group by history.goodid order by space limit 0,20</job>
 	</func>
 	<!-- 结束 -->
 
