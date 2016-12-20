@@ -13,7 +13,7 @@
 		<job>update orders set remark = ${remark},orderno = ${orderno},money = (select sum(count*price) from shopping,goods where shopping.goodid = goods.id and shopping.userid = ${userid} and shopping.orderid = ${orderId}) where userid = ${userid} and id = ${orderId}</job>
 
 		<!-- 构建统一下单接口所需参数 -->
-		<job result="info" one="true">select user.openid,cast(orders.money*100 as SIGNED) money from user,orders where user.id = orders.userid and orders.id = ${orderId} and orders.userid = ${userid}</job>
+		<job result="info" one="true">select user.openid,cast((orders.money + orders.freight)*100 as SIGNED) money from user,orders where user.id = orders.userid and orders.id = ${orderId} and orders.userid = ${userid}</job>
 		<job result="openid">Jget(${info},'openid')</job>
 		<job result="total_fee">Jget(${info},'money')</job>
 
@@ -154,7 +154,7 @@
 		<job>Jset('exchange',${exchange},'exchangeState',${exchangeState})</job>
 	</func>
 
-	<func id="1004" name="exportOrders" des="导出订单记录并自动发送邮箱" private="true" cron="0 0 17 * * *">
+	<func id="1004" name="exportOrders" des="导出订单记录并自动发送邮箱" private="true" cron="0 0 16 * * *">
 
 		<job result="orderData">select orders.id,orders.name,orders.tel,orders.detail,
 			GROUP_CONCAT(CONCAT(goods.name,IF(ISNULL(shopping.attach),'',CONCAT('(',shopping.attach,')')),' X',shopping.count) SEPARATOR ';') goods,
