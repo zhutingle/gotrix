@@ -45,4 +45,9 @@
 		</job>
 	</func>
 
+	<func id="203" name="selectSimpleUser" des="查询个人简要信息">
+
+		<job result="userInfo" one="true">select id,nick,portrait from user where id = ${userid}</job>
+	</func>
+
 </funcs>
