@@ -87,7 +87,7 @@ func InitArgs() {
 	for i, arg := range args {
 		switch arg {
 		case "--config", "-f":
-			Config.Args.ConfigFile = args[i + 1]
+			Config.Args.ConfigFile = args[i+1]
 			break
 		case "--decrypt", "-d":
 			Config.Args.Decrypt = true
@@ -96,7 +96,7 @@ func InitArgs() {
 			Config.Args.Console = true
 			break
 		case "--password", "-p":
-			Config.Args.Password = args[i + 1]
+			Config.Args.Password = args[i+1]
 			break
 		default:
 			break
@@ -104,12 +104,18 @@ func InitArgs() {
 	}
 
 	if len(Config.Args.ConfigFile) == 0 {
-		panic("未指定配置文件。")
+		// 未指定配置文件，从当前目录寻找 gotrix.conf
+		log.Println("配置文件未配置，自动寻找默认配置文件 gotrix.conf")
+		s, err := filepath.Abs(filepath.Dir(os.Args[0]))
+		if err != nil {
+			panic("获取当前目录失败")
+		}
+		Config.Args.ConfigFile = filepath.Join(s, filepath.FromSlash(path.Clean("/gotrix.conf")))
 	}
 }
 
 func pathJoin(str string) string {
-	return filepath.Join(Config.Dir.Base, filepath.FromSlash(path.Clean("/" + str)))
+	return filepath.Join(Config.Dir.Base, filepath.FromSlash(path.Clean("/"+str)))
 }
 
 func InitConfiguration() {

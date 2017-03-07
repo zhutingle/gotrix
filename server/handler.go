@@ -68,11 +68,19 @@ func packageTarget(staticDir string, targetDir string) {
 	var cacheFile string = "js/potrix.cache.js"
 	var md5Map map[string]string = make(map[string]string)
 	var md5KeySort []string = make([]string, 0)
-	for _, files := range [](map[string][]byte){htmlFiles, cssFiles, jsFiles, imgFiles} {
+	for _, files := range [](map[string][]byte){htmlFiles, cssFiles, jsFiles} {
 		for shortPath, bs := range files {
 			if shortPath != cacheFile {
 				md5KeySort = append(md5KeySort, shortPath)
 				md5Map[shortPath] = b64.EncodeToString(global.Md5(bs))
+			}
+		}
+	}
+	for _, files := range [](map[string][]byte){imgFiles} {
+		for shortPath, bs := range files {
+			if shortPath != cacheFile {
+				md5KeySort = append(md5KeySort, shortPath+".cache")
+				md5Map[shortPath+".cache"] = b64.EncodeToString(global.Md5(bs))
 			}
 		}
 	}
