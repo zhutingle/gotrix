@@ -12,19 +12,19 @@ import (
 type EncryptChecker struct {
 }
 
-func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (checkedParams *global.CheckedParams, err *global.GotrixError) {
+func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (checkedParams *global.CheckedParams, gErr *global.GotrixError) {
 
 	checkedParams = &global.CheckedParams{V: make(map[string]interface{})}
 
 	if r.Body == nil {
-		err = global.NO_BODY_ERROR
+		gErr = global.NO_BODY_ERROR
 		return
 	}
 
 	var reader io.Reader = r.Body
 	b, e := ioutil.ReadAll(reader)
 	if e != nil {
-		err = global.READ_BODY_ERROR
+		gErr = global.READ_BODY_ERROR
 		return
 	}
 
@@ -35,7 +35,7 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 		}
 	}
 	if i == 0 || i >= len {
-		err = global.BODY_SCHEME_ERROR
+		gErr = global.BODY_SCHEME_ERROR
 		return
 	}
 
@@ -43,22 +43,22 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 	var aesPass interface{}
 	switch i {
 	case 40: // session
-		aesPass, err = handler.GetSession(b[:i])
-		if err != nil {
+		aesPass, gErr = handler.GetSession(b[:i])
+		if gErr != nil {
 			return
 		}
 		if aesPass == nil {
-			err = global.USER_SESSION_NOT_EXISTES
+			gErr = global.USER_SESSION_NOT_EXISTES
 			return
 		}
 		break
 	case 64: // token
-		aesPass, err = handler.GetPass(b[:i])
-		if err != nil {
+		aesPass, gErr = handler.GetPass(b[:i])
+		if gErr != nil {
 			return
 		}
 		if aesPass == nil {
-			err = global.USER_NOT_EXISTES
+			gErr = global.USER_NOT_EXISTES
 			return
 		}
 		break
@@ -67,17 +67,17 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 		self = true
 		break
 	default:
-		err = global.NOT_SUPPORT_CONTENT_TYPE
+		gErr = global.NOT_SUPPORT_CONTENT_TYPE
 		return
 	}
 
 	var pass []byte
-	var userid int64
+	var userId int64
 	switch aesPass.(type) {
 	case string:
 		pass = []byte(aesPass.(string))
 		var decryptBytes []byte
-		decryptBytes, e = global.AesDecrypt(b[i+1:], pass, 256)
+		decryptBytes, e = global.AesDecrypt(b[i + 1:], pass, 256)
 		if e == nil {
 			e = json.Unmarshal(decryptBytes, &(checkedParams.V))
 		}
@@ -85,14 +85,14 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 	case map[string]interface{}:
 		passJson := aesPass.(map[string]interface{})
 		if passJson["id"] != nil {
-			userid = int64(passJson["id"].(float64))
+			userId = int64(passJson["id"].(float64))
 		}
 		for _, val := range passJson {
 
 			if _, ok := val.(string); ok {
 				pass = []byte(val.(string))
 				var decryptBytes []byte
-				decryptBytes, e = global.AesDecrypt(b[i+1:], pass, 256)
+				decryptBytes, e = global.AesDecrypt(b[i + 1:], pass, 256)
 				if e != nil {
 					continue
 				}
@@ -111,32 +111,30 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 	}
 
 	if e != nil {
-		err = global.PASSWORD_ERROR
+		gErr = global.PASSWORD_ERROR
 		return
 	}
 
 	var fun interface{} = checkedParams.V["func"]
 	if fun == nil {
-		err = global.FUNC_PARAM_MUST
+		gErr = global.FUNC_PARAM_MUST
 		return
 	}
 
 	switch fun.(type) {
 	case float64:
 		checkedParams.Func = int(checkedParams.V["func"].(float64))
-		checkedParams.V["token"] = string(b[:i])
-		checkedParams.V["_ip"] = r.Header.Get("X-Forward-For")
 		checkedParams.Pass = pass
 		checkedParams.Checked = true
 		checkedParams.Self = self
+		checkedParams.V["userid"] = userId
+		checkedParams.V["token"] = string(b[:i])
+		checkedParams.V["_ip"] = r.Header.Get("X-Forward-For")
+		gErr = handler.CheckPermission(userId, checkedParams.Func)
 		break
 	default:
-		err = global.FUNC_PARAM_ERROR
+		gErr = global.FUNC_PARAM_ERROR
 		break
-	}
-
-	if userid > 0 {
-		checkedParams.V["userid"] = userid
 	}
 
 	return

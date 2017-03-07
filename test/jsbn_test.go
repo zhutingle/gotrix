@@ -2,7 +2,6 @@ package test
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"math/rand"
 	"testing"
@@ -10,11 +9,6 @@ import (
 
 	"github.com/zhutingle/gotrix/ecdh"
 )
-
-func keep() {
-	fmt.Println("Hello World!!!")
-	log.Println("keep")
-}
 
 func TestIntAt(t *testing.T) {
 
@@ -184,7 +178,7 @@ func TestNegate(t *testing.T) {
 		randInt = -randInt
 
 		if calculateVaue(bi) == randInt {
-			t.Logf(" Negate 测试通过，正确值和实际值都为：", randInt)
+			t.Logf(" Negate 测试通过，正确值和实际值都为：%d", randInt)
 		} else {
 			t.Errorf(" Negate 测试不通过，正确值为：%d 实际值为：%d", randInt, calculateVaue(bi))
 		}
@@ -207,10 +201,10 @@ func TestDMultiply(t *testing.T) {
 
 		bi.DMultiply(randInt2)
 
-		if calculateVaue(bi) == randInt*randInt2 {
-			t.Logf(" DMultiply 测试通过")
+		if calculateVaue(bi) == randInt * randInt2 {
+			t.Log(" DMultiply 测试通过\n")
 		} else {
-			t.Errorf(" DMultiply 测试不通过：randInt=%d,randInt2=%d,randInt*randInt2=%d,bi=%d", randInt, randInt2, randInt*randInt2, calculateVaue(bi))
+			t.Errorf(" DMultiply 测试不通过：randInt=%d,randInt2=%d,randInt*randInt2=%d,bi=%d", randInt, randInt2, randInt * randInt2, calculateVaue(bi))
 		}
 	}
 }
@@ -236,9 +230,9 @@ func TestLShiftTo(t *testing.T) {
 		bi.LShiftTo(randInt2, bi2)
 
 		if calculateVaue(bi2) == (randInt << uint(randInt2)) {
-			t.Logf(" LShiftTo 测试通过")
+			t.Log(" LShiftTo 测试通过\n")
 		} else {
-			t.Errorf(" LShiftTo 测试不通过：randInt=%d randInt2=%d 正确结果为：%d 实际结果为：%d", randInt, randInt2, randInt<<uint(randInt2), calculateVaue(bi2))
+			t.Errorf(" LShiftTo 测试不通过：randInt=%d randInt2=%d 正确结果为：%d 实际结果为：%d", randInt, randInt2, randInt << uint(randInt2), calculateVaue(bi2))
 		}
 	}
 }
@@ -265,9 +259,9 @@ func TestRShiftTo(t *testing.T) {
 		bi.RShiftTo(randInt2, bi2)
 
 		if calculateVaue(bi2) == (randInt >> uint(randInt2)) {
-			t.Logf(" RShiftTo 测试通过")
+			t.Log(" RShiftTo 测试通过\n")
 		} else {
-			t.Errorf(" RShiftTo 测试不通过：randInt=%d randInt2=%d 正确结果为：%d 实际结果为：%d", randInt, randInt2, randInt>>uint(randInt2), calculateVaue(bi2))
+			t.Errorf(" RShiftTo 测试不通过：randInt=%d randInt2=%d 正确结果为：%d 实际结果为：%d", randInt, randInt2, randInt >> uint(randInt2), calculateVaue(bi2))
 		}
 	}
 }
@@ -298,7 +292,7 @@ func TestCompareTo(t *testing.T) {
 		compareResult := bi1.CompareTo(bi2)
 
 		if (realResult == 0 && compareResult == 0) || (realResult > 0 && compareResult > 0) || (realResult < 0 && compareResult < 0) {
-			t.Logf(" CompareTo 测试通过")
+			t.Log(" CompareTo 测试通过\n")
 		} else {
 			t.Errorf(" CompareTo 测试不通过：randInt1=%d randInt2=%d 正确结果为：%d 实际结果为：%d", randInt1, randInt2, realResult, compareResult)
 		}
@@ -360,7 +354,7 @@ func TestMultiplyTo(t *testing.T) {
 		funcResult := calculateVaue(biTemp)
 
 		if realResult == funcResult {
-			t.Logf(" MultiplyTo 测试通过")
+			t.Log(" MultiplyTo 测试通过\n")
 		} else {
 			t.Errorf(" MultiplyTo 测试不通过：randInt1=%d randInt2=%d 正确结果为：%d 实际结果为：%d", randInt1, randInt2, realResult, funcResult)
 		}
@@ -387,7 +381,7 @@ func TestSquareTo(t *testing.T) {
 		funcResult := calculateVaue(biResult)
 
 		if realResult == funcResult {
-			t.Logf(" SquareTo 测试通过")
+			t.Log(" SquareTo 测试通过\n")
 		} else {
 			t.Errorf(" SquareTo 测试不通过：randInt1=%d,realResult=%d,funcResult=%d\n", randInt1, realResult, funcResult)
 		}
@@ -419,8 +413,8 @@ func TestDivRemTo(t *testing.T) {
 
 		bi1.DivRemTo(bi2, result1, result2)
 
-		if calculateVaue(result1) == randInt1/randInt2 && calculateVaue(result2) == randInt1%randInt2 {
-			t.Logf("DivRemTo 测试通过")
+		if calculateVaue(result1) == randInt1 / randInt2 && calculateVaue(result2) == randInt1 % randInt2 {
+			t.Log("DivRemTo 测试通过\n")
 		} else {
 			t.Errorf("DivRemTo 测试不通过：randInt1=%d,randInt2=%d,result1=%d,result2=%d\n", randInt1, randInt2, calculateVaue(result1), calculateVaue(result2))
 		}
@@ -477,7 +471,7 @@ func TestInt2char(t *testing.T) {
 		bi.FromInt(randInt)
 
 		if bi.ToString(16) == fmt.Sprintf("%x", randInt) {
-			t.Logf(" ToString(16) 测试成功")
+			t.Log(" ToString(16) 测试成功\n")
 		} else {
 			t.Errorf(" ToString(16) 测试失败：randInt=%d", randInt)
 		}

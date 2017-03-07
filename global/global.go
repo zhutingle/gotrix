@@ -18,6 +18,7 @@ type Handler interface {
 	Handle(checkedParams *CheckedParams) (response interface{}, err *GotrixError)
 	GetPass(token []byte) (response interface{}, err *GotrixError)
 	GetSession(token []byte) (response interface{}, err *GotrixError)
+	CheckPermission(userId int64, funcId int) (err *GotrixError)
 }
 
 type Checker interface {
@@ -53,6 +54,8 @@ var USER_SESSION_NOT_EXISTES *GotrixError = &GotrixError{Status: 1011, Msg: "会
 var FUNC_SELF_ERROR *GotrixError = &GotrixError{Status: 1012, Msg: "功能号的自解密状态与配置不一致，不允许继续执行"}
 var NOT_SUPPORT_CONTENT_TYPE *GotrixError = &GotrixError{Status: 1013, Msg: "不支持的Content-type"}
 var FUNC_PRIVATE_ERROR *GotrixError = &GotrixError{Status: 1014, Msg: "该方法是私有方法，外部不能调用"}
+var NO_PERMISSION_ERROR *GotrixError = &GotrixError{Status:1015, Msg:"该用户没有调用功能号[%v]的权限"}
+var NO_PERMISSION_PAGE_ERROR *GotrixError = &GotrixError{Status:1016, Msg:"该用户没有调用页面号[%v]的权限"}
 
 var PARAM_MUST_EXISTS *GotrixError = &GotrixError{Status: 2001, Msg: "必要参数[%s]没有设值"}
 var PARAM_LENGTH_ERROR *GotrixError = &GotrixError{Status: 2002, Msg: "参数[%s]的长度必须在[%d]和[%d]之间"}

@@ -2,12 +2,10 @@ package handler
 
 import (
 	"encoding/xml"
-	//	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strconv"
 	"strings"
 	"unicode"
@@ -18,6 +16,8 @@ import (
 var funcReg *regexp.Regexp = regexp.MustCompile("^(\\w+)\\((.*)\\)$")
 var argsReg *regexp.Regexp = regexp.MustCompile("((true)|(false)|(null)|(-?\\d+)|(-?\\d+\\.\\d+)|(\\'.*?\\')|(\\$\\{\\w+\\}))(?:,|$)")
 var sqlArgsReg *regexp.Regexp = regexp.MustCompile("\\$\\{\\w+\\}")
+var autoTagReg *regexp.Regexp = regexp.MustCompile("<auto>(.*?)</auto>")
+var autoTagItemReg *regexp.Regexp = regexp.MustCompile("\\w+\\s*=\\s*\\$\\{\\w+\\}\\s*(?:,|$|(and))\\s*")
 
 var pHandleHttp Handle
 var pHandleFunc Handle
@@ -48,36 +48,47 @@ type Sql struct {
 
 type Page struct {
 	Func
-	Parent int `xml:"parent,attr"`
-	Insert int `xml:"insert,attr"`
-	Delete int `xml:"delete,attr"`
-	Update int `xml:"update,attr"`
-	Select int `xml:"select,attr"`
+	Parent int    `xml:"parent,attr"`
+	Insert []Func `xml:"insert"`
+	Delete []Func `xml:"delete"`
+	Update []Func `xml:"update"`
+	Select []Func `xml:"select"`
 }
 
 type Job struct {
 	Result  string `xml:"result,attr"`
 	Test    string `xml:"test,attr"`
-	One     bool   `xml:"one,attr"`
+	Type    string `xml:"type,attr"`
 	Job     string `xml:",innerxml"`
 	handle  Handle
 	testJob *Job
+	auto    bool
 }
 
 type Param struct {
 	XMLName xml.Name
 	Type    string `xml:"type,attr"`
 	Name    string `xml:"name,attr"`
-	Must    bool   `xml:"must,attr"`
+	Des     string `xml:"des,attr"`
+	Must    string `xml:"must,attr"`
 	Len     string `xml:"len,attr"`
+	Form    string `xml:"form,attr"`
+	Dict    string `xml:"dict,attr"` // 数据字典
 	Valid   Valid
 	min     int64
 	max     int64
+	must    bool
 }
 
 var funcMap map[int]*Func
+var funcNameMap map[string]*Func
 var sqlMap map[int]*Sql
 var pageMap map[int]*Page
+
+var stringVaid = StringValid{}
+var intValid = IntValid{}
+var boolValid = BoolValid{}
+var arrayValid = ArrayValid{}
 
 func readXmlFolder(simpleHandler SimpleHandler, folder string) {
 
@@ -87,16 +98,17 @@ func readXmlFolder(simpleHandler SimpleHandler, folder string) {
 	pHandleSql = (&handleSql{}).init()
 
 	funcMap = make(map[int]*Func)
+	funcNameMap = make(map[string]*Func)
 	sqlMap = make(map[int]*Sql)
 	pageMap = make(map[int]*Page)
 
 	var result Result
 
-	_, filename, _, _ := runtime.Caller(1)
-	baseDir := regexp.MustCompile("src.*$").ReplaceAllString(filename, "")
+	//_, filename, _, _ := runtime.Caller(1)
+	//baseDir := regexp.MustCompile("src.*$").ReplaceAllString(filename, "")
 
 	// 对文件夹进行遍历，读取所有XML文件
-	filepath.Walk(baseDir+folder, func(path string, info os.FileInfo, err error) error {
+	filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
 		if info == nil {
 			return nil
 		}
@@ -109,92 +121,123 @@ func readXmlFolder(simpleHandler SimpleHandler, folder string) {
 		return nil
 	})
 
-	stringVaid := StringValid{}
-	intValid := IntValid{}
-	boolValid := BoolValid{}
-	arrayValid := ArrayValid{}
+	dealWithFuncs(result.Func)
 
-	for i := 0; i < len(result.Func); i++ {
-		v := result.Func[i]
-		funcMap[v.Id] = &v
-
-		// 设置各Param的参数检查器
-		for i := 0; i < len(v.Param); i++ {
-			switch v.Param[i].XMLName.Local {
-			case "string":
-				v.Param[i].Valid = stringVaid
-				if len(v.Param[i].Len) > 0 {
-					v.Param[i].min, _ = strconv.ParseInt(regexp.MustCompile("^\\d+").FindString(v.Param[i].Len), 10, 64)
-					v.Param[i].max, _ = strconv.ParseInt(regexp.MustCompile("\\d+$").FindString(v.Param[i].Len), 10, 64)
-				}
-				break
-			case "int":
-				v.Param[i].Valid = intValid
-				if len(v.Param[i].Len) > 0 {
-					v.Param[i].min, _ = strconv.ParseInt(regexp.MustCompile("^\\d+").FindString(v.Param[i].Len), 10, 64)
-					v.Param[i].max, _ = strconv.ParseInt(regexp.MustCompile("\\d+$").FindString(v.Param[i].Len), 10, 64)
-				}
-				break
-			case "bool":
-				v.Param[i].Valid = boolValid
-				break
-			case "array":
-				v.Param[i].Valid = arrayValid
-				break
-			default:
-				break
-			}
-		}
-
-		// 去掉Job的<![CDATA[]]>标签
-		cdataExp := regexp.MustCompile("^<!\\[CDATA\\[(.*?)\\]\\]>$")
-		for j := 0; j < len(v.Jobs); j++ {
-			flag := cdataExp.MatchString(v.Jobs[j].Job)
-			if flag {
-				v.Jobs[j].Job = cdataExp.FindAllStringSubmatch(v.Jobs[j].Job, -1)[0][1]
-			}
-			strings.TrimSpace(v.Jobs[j].Job)
-		}
-
-		// 解析Job标签，并给不同的Job标签添加不同的处理器
-		for j := 0; j < len(v.Jobs); j++ {
-			funcStrs := funcReg.FindAllStringSubmatch(v.Jobs[j].Job, -1)
-			if len(funcStrs) == 0 {
-				if strings.HasPrefix(v.Jobs[j].Job, "http") {
-					v.Jobs[j].handle = pHandleHttp
-				} else {
-					v.Jobs[j].handle = pHandleSql
-				}
-			} else {
-				funcName := funcStrs[0][1]
-				// 首字母大写，表示调用的是本地方法
-				if unicode.IsUpper(rune(funcName[0])) {
-					v.Jobs[j].handle = pHandleFunc
-				} else { // 首字母不是大写则表示调用 Redis 的接口
-					v.Jobs[j].handle = pHandleRedis
-				}
-			}
-
-			// 解析Test标签，将Test标签转换为testJob
-			if len(v.Jobs[j].Test) > 0 {
-				v.Jobs[j].testJob = &Job{Job: v.Jobs[j].Test}
-			}
-		}
-
-	}
 	for i := 0; i < len(result.Sql); i++ {
-		sqlMap[result.Sql[i].Id] = &result.Sql[i]
+		v := result.Sql[i]
+		sqlMap[v.Id] = &v
+
+		v.Param = dealWithParam(v.Param)
 	}
 	for i := 0; i < len(result.Page); i++ {
-		pageMap[result.Page[i].Id] = &result.Page[i]
+		v := result.Page[i]
+		pageMap[v.Id] = &v
+
+		v.Param = dealWithParam(v.Param)
+
+		dealWithFuncs(v.Insert)
+		dealWithFuncs(v.Delete)
+		dealWithFuncs(v.Update)
+		dealWithFuncs(v.Select)
+
 	}
 
+}
+
+func dealWithFuncs(funcs []Func) {
+	for i := 0; i < len(funcs); i++ {
+		v := funcs[i]
+		funcMap[v.Id] = &v
+		funcNameMap[v.Name] = &v
+
+		v.Param = dealWithParam(v.Param)
+		dealWithJob(v.Jobs)
+	}
+}
+
+func dealWithParam(params []Param) []Param {
+	// 设置各Param的参数检查器
+	for i := 0; i < len(params); i++ {
+
+		params[i].must = (params[i].Must == "true")
+		params[i].Type = params[i].XMLName.Local
+
+		switch params[i].XMLName.Local {
+		case "string":
+			params[i].Valid = stringVaid
+			if len(params[i].Len) > 0 {
+				params[i].min, _ = strconv.ParseInt(regexp.MustCompile("^\\d+").FindString(params[i].Len), 10, 64)
+				params[i].max, _ = strconv.ParseInt(regexp.MustCompile("\\d+$").FindString(params[i].Len), 10, 64)
+			}
+			break
+		case "int":
+			params[i].Valid = intValid
+			if len(params[i].Len) > 0 {
+				params[i].min, _ = strconv.ParseInt(regexp.MustCompile("^\\d+").FindString(params[i].Len), 10, 64)
+				params[i].max, _ = strconv.ParseInt(regexp.MustCompile("\\d+$").FindString(params[i].Len), 10, 64)
+			}
+			break
+		case "bool":
+			params[i].Valid = boolValid
+			break
+		case "array":
+			params[i].Valid = arrayValid
+			break
+		default:
+			params = append(params[:i], params[i+1:]...)
+			i--
+			break
+		}
+	}
+	return params
+}
+
+func dealWithJob(jobs []Job) {
+	// 去掉Job的<![CDATA[]]>标签
+	cdataExp := regexp.MustCompile("^<!\\[CDATA\\[(.*?)\\]\\]>$")
+	autoExp := regexp.MustCompile("<auto>.*?</auto>")
+	for j := 0; j < len(jobs); j++ {
+		flag := cdataExp.MatchString(jobs[j].Job)
+		if flag {
+			jobs[j].Job = cdataExp.FindAllStringSubmatch(jobs[j].Job, -1)[0][1]
+		}
+		jobs[j].Job = strings.TrimSpace(jobs[j].Job)
+	}
+
+	// 解析Job标签，并给不同的Job标签添加不同的处理器
+	for j := 0; j < len(jobs); j++ {
+
+		jobs[j].auto = autoExp.MatchString(jobs[j].Job)
+
+		funcStrs := funcReg.FindAllStringSubmatch(jobs[j].Job, -1)
+		if len(funcStrs) == 0 {
+			if strings.HasPrefix(jobs[j].Job, "http") {
+				jobs[j].handle = pHandleHttp
+			} else {
+				jobs[j].handle = pHandleSql
+			}
+		} else {
+			funcName := funcStrs[0][1]
+			// 首字母大写，表示调用的是本地方法
+			if unicode.IsUpper(rune(funcName[0])) {
+				jobs[j].handle = pHandleFunc
+			} else {
+				// 首字母不是大写则表示调用 Redis 的接口
+				jobs[j].handle = pHandleRedis
+			}
+		}
+
+		// 解析Test标签，将Test标签转换为testJob
+		if len(jobs[j].Test) > 0 {
+			jobs[j].testJob = &Job{Job: jobs[j].Test}
+		}
+	}
 }
 
 func readXmlFile(xmlFileName string, result *Result) {
 
 	// 读取文件内容
-	content, err := global.ReadConfigFile(xmlFileName)
+	content, err := global.ReadConfigFile(xmlFileName, nil)
 	//	content, err := ioutil.ReadFile(xmlFileName)
 	if err != nil {
 		log.Fatal(err)

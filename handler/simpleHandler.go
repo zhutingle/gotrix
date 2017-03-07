@@ -7,6 +7,7 @@ import (
 
 	"github.com/robfig/cron"
 	"github.com/zhutingle/gotrix/global"
+	"regexp"
 )
 
 type SimpleHandler struct {
@@ -19,7 +20,7 @@ type Handle interface {
 
 func (this SimpleHandler) Init() {
 
-	readXmlFolder(this, "src/github.com/zhutingle/gotrix/func")
+	readXmlFolder(this, global.Config.Dir.Func)
 
 	this.cronTask()
 
@@ -44,8 +45,8 @@ func (this SimpleHandler) Handle(checkedParams *global.CheckedParams) (response 
 	}
 	// 4、根据配置对参数进行验证
 	for _, param := range handleFunc.Param {
-		//	 参数验证
-		gErr = param.Valid.Valid(&param, checkedParams.V[param.Name])
+		// 参数验证
+		checkedParams.V[param.Name], gErr = param.Valid.Valid(&param, checkedParams.V[param.Name])
 		if gErr != nil {
 			return
 		}
@@ -80,7 +81,7 @@ func (this SimpleHandler) jobHandle(handleFunc *Func, checkedParams *global.Chec
 		}
 
 		if len(job.Result) == 0 {
-			checkedParams.V[strconv.Itoa(i+1)] = response
+			checkedParams.V[strconv.Itoa(i + 1)] = response
 		} else {
 			checkedParams.V[job.Result] = response
 		}
@@ -90,16 +91,38 @@ func (this SimpleHandler) jobHandle(handleFunc *Func, checkedParams *global.Chec
 	return
 }
 
-func (this SimpleHandler) GetPass(token []byte) (response interface{}, gErr *global.GotrixError) {
+func (this SimpleHandler) GetPass(token []byte) (interface{}, *global.GotrixError) {
 	var checkedParams *global.CheckedParams = &global.CheckedParams{Func: 0, V: make(map[string]interface{})}
 	checkedParams.V["token"] = string(token)
-	response, gErr = this.Handle(checkedParams)
-	return
+	return this.Handle(checkedParams)
 }
 
-func (this SimpleHandler) GetSession(token []byte) (response interface{}, gErr *global.GotrixError) {
+func (this SimpleHandler) GetSession(token []byte) (interface{}, *global.GotrixError) {
 	var checkedParams *global.CheckedParams = &global.CheckedParams{Func: 1, V: make(map[string]interface{})}
 	checkedParams.V["token"] = string(token)
-	response, gErr = this.Handle(checkedParams)
+	return this.Handle(checkedParams)
+}
+
+func (this SimpleHandler) CheckPermission(userId int64, funcId int) (gErr *global.GotrixError) {
+	// id 大于等于 0 的功能号都是免检功能号
+	if funcId >= 0 {
+		return
+	}
+	var checkedParams *global.CheckedParams = &global.CheckedParams{Func: 6, V: make(map[string]interface{})}
+	checkedParams.V["userId"] = userId
+	checkedParams.V["funcId"] = funcId
+	funcs, gErr := this.Handle(checkedParams)
+
+	funcReg, err := regexp.Compile(fmt.Sprintf("(^%d,)|(,%d,)|(,%d$)", funcId, funcId, funcId))
+	if err != nil {
+		gErr = global.FUNC_PARAM_ERROR
+		return
+	}
+
+	if !funcReg.MatchString(funcs.(string)) {
+		gErr = global.NewGotrixError(global.NO_PERMISSION_ERROR, funcId)
+		return
+	}
+
 	return
 }

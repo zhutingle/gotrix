@@ -21,6 +21,7 @@ import (
 
 	"github.com/scorredoira/email"
 	"github.com/tealeg/xlsx"
+	"regexp"
 )
 
 type handleFunc struct {
@@ -87,6 +88,7 @@ func (this *handleFunc) init() *handleFunc {
 	this.initEmail()
 	this.initHttp()
 	this.initCall()
+	this.initGotrix()
 
 	return this
 }
@@ -430,7 +432,7 @@ func (this *handleFunc) initXlsx() {
 			}
 		}
 
-		filePath := global.Config.TempFolder + fileName + ".xlsx"
+		filePath := global.Config.Dir.Temp + fileName + ".xlsx"
 		err = file.Save(filePath)
 		if err != nil {
 			fmt.Println(err.Error())
@@ -560,5 +562,144 @@ func (this *handleFunc) initCall() {
 			}
 		}
 		return result, nil
+	}
+}
+
+/**
+ * 定义操作框架本身的扩展方法
+ */
+func (this *handleFunc) initGotrix() {
+	// 获取所有有权限的页面
+	this.methodMap["GetPermissionedPages"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		funcsStr := args[0].(string)
+		funcsArray := strings.Split(funcsStr, ",")
+
+		resultArray := make([]interface{}, 0)
+		for i := 0; i < len(funcsArray); i++ {
+			funcId, err := strconv.ParseInt(funcsArray[i], 10, 32)
+			if err == nil && pageMap[int(funcId)] != nil {
+				page := pageMap[int(funcId)]
+				pageSimple := make(map[string]interface{})
+				pageSimple["Id"] = page.Id
+				pageSimple["Des"] = page.Des
+				pageSimple["Parent"] = page.Parent
+				resultArray = append(resultArray, pageSimple)
+			}
+		}
+
+		return resultArray, nil
+	}
+	// 获取用户有权限的单个页面的详细信息
+	this.methodMap["GetPermissionedPage"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		funcsStr := args[0].(string)
+		pageId := int(args[1].(int64))
+		funcReg, err := regexp.Compile(fmt.Sprintf("(^%d,)|(,%d,)|(,%d$)", pageId, pageId, pageId))
+		if err != nil {
+			gErr = global.FUNC_PARAM_ERROR
+			return
+		}
+
+		if !funcReg.MatchString(funcsStr) {
+			gErr = global.NewGotrixError(global.NO_PERMISSION_PAGE_ERROR, pageId)
+			return
+		}
+
+		var dictMap map[string]interface{} = make(map[string]interface{})
+
+		var addDictMap = func(name string) *global.GotrixError {
+			if dictMap[name] != nil {
+				return nil
+			}
+			function := funcNameMap[name]
+			var checkedParams *global.CheckedParams
+			if function == nil {
+				function = funcNameMap["dict"]
+				if function == nil {
+					return nil
+				}
+				checkedParams = &global.CheckedParams{Func: function.Id, V: make(map[string]interface{})}
+				checkedParams.V["name"] = name
+			} else {
+				checkedParams = &global.CheckedParams{Func: function.Id, V: make(map[string]interface{})}
+			}
+			result, gotrixError := this.simpleHandler.Handle(checkedParams)
+			if gotrixError != nil {
+				return gotrixError
+			}
+			dictMap[name] = result
+			return nil
+		}
+
+		var dealWithFuncs = func(funcs []Func) (returnFuncs []interface{}) {
+			paramReg := regexp.MustCompile("\\$\\{\\w*\\}")
+			returnFuncs = make([]interface{}, 0)
+			for _, d := range funcs {
+				tempMap := make(map[string]interface{})
+				tempMap["Id"] = d.Id
+				tempMap["Des"] = d.Des
+
+				jobs := make([]string, 0)
+				pagination := false
+				for i, lenI := 0, len(d.Jobs); i < lenI; i++ {
+					allParam := paramReg.FindAllString(d.Jobs[i].Job, -1)
+					for j, lenJ := 0, len(allParam); j < lenJ; j++ {
+						jobs = append(jobs, allParam[j][2:len(allParam[j])-1])
+					}
+					if d.Jobs[i].Type == "pagination" {
+						pagination = true
+					}
+				}
+				tempMap["Jobs"] = jobs
+				tempMap["Pagination"] = pagination
+
+				params := make([]interface{}, 0)
+				for i, lenI := 0, len(d.Param); i < lenI; i++ {
+					tempParam := make(map[string]interface{})
+					tempParam["Name"] = d.Param[i].Name
+					tempParam["Type"] = d.Param[i].Type
+					if len(d.Param[i].Must) > 0 {
+						tempParam["Must"] = d.Param[i].must
+					}
+					if len(d.Param[i].Des) > 0 {
+						tempParam["Des"] = d.Param[i].Des
+					}
+					if len(d.Param[i].Form) > 0 {
+						tempParam["Form"] = d.Param[i].Form
+					}
+					if len(d.Param[i].Len) > 0 {
+						tempParam["Len"] = d.Param[i].Len
+					}
+					if len(d.Param[i].Dict) > 0 {
+						addDictMap(d.Param[i].Dict)
+						tempParam["Dict"] = d.Param[i].Dict
+					}
+					params = append(params, tempParam)
+				}
+				tempMap["Param"] = params
+
+				returnFuncs = append(returnFuncs, tempMap)
+			}
+			return
+		}
+
+		page := pageMap[pageId]
+		returnMap := make(map[string]interface{})
+		returnMap["Id"] = page.Id
+		returnMap["Name"] = page.Name
+		returnMap["Des"] = page.Des
+		returnMap["Param"] = page.Param
+		for i, length := 0, len(page.Param); i < length; i++ {
+			if len(page.Param[i].Dict) > 0 {
+				addDictMap(page.Param[i].Dict)
+			}
+		}
+		returnMap["Insert"] = dealWithFuncs(page.Insert)
+		returnMap["Delete"] = dealWithFuncs(page.Delete)
+		returnMap["Update"] = dealWithFuncs(page.Update)
+		returnMap["Select"] = dealWithFuncs(page.Select)
+		returnMap["Dict"] = dictMap
+		fmt.Println(dictMap)
+
+		return returnMap, nil
 	}
 }

@@ -1,58 +1,46 @@
 package global
 
 import (
-	"fmt"
 	"net/mail"
-	"os"
-	"path/filepath"
-	"strings"
 	"time"
 
+	"fmt"
 	"github.com/BurntSushi/toml"
+	"log"
+	"os"
+	"path"
+	"path/filepath"
 )
-
-func InitConfiguration() {
-	fmt.Println("Gotrix 开始读取全局配置文件 ...")
-
-	filePath, _ := filepath.Abs(os.Args[0])
-	lastIndexOfSeperator := strings.LastIndex(filePath, string(filepath.Separator))
-	filePath = filePath[:lastIndexOfSeperator+1]
-	filePath = filePath + "gotrix.conf"
-
-	bs, err := ReadConfigFile(filePath)
-	if err != nil {
-		panic(fmt.Sprintf("读取配置文件出现一个异常：[%v]", err))
-	}
-	if _, err := toml.Decode(string(bs), &Config); err != nil {
-		panic(fmt.Sprintf("Gotrix 读取全局配置文件时出现一个异常：[%v]", err))
-	} else {
-		Config.M = make(map[string]interface{}, 0)
-		for _, v := range Config.V {
-			Config.M[v.Key] = v.Val
-		}
-		fmt.Println("Gotrix Global Configuration success.")
-	}
-
-}
 
 var Config Configuration
 
 type Configuration struct {
-	Args       Args
-	LogFile    string
-	TempFolder string
-	Redis      Redis
-	Database   Database
-	WxCert     WxCert
-	Email      Email
-	V          []V
-	M          map[string]interface{}
+	Args     Args
+	Dir      Dir
+	Redis    Redis
+	Database Database
+	WxCert   WxCert
+	Email    Email
+	V        []V
+	M        map[string]interface{}
 }
 
 type Args struct {
-	Decrypt  bool   // 控制台参数 --decrypt
-	Console  bool   // 控制台参数 --console
-	Password string // 控制台参数 --password {{password}}
+	ConfigFile string // 配置文件
+	Decrypt    bool   // 控制台参数 --decrypt
+	Console    bool   // 控制台参数 --console
+	Password   string // 控制台参数 --password {{password}}
+	Port       int64  // 端口号
+	Debug      bool
+}
+
+type Dir struct {
+	Base    string // 基目录，其它一切目录都基于此
+	Temp    string // 临时文件夹
+	LogFile string // 日志文件
+	Func    string // 功能目录
+	Static  string // 静态目录
+	Target  string // 输出目录
 }
 
 type Redis struct {
@@ -90,4 +78,66 @@ type Email struct {
 type V struct {
 	Key string
 	Val string
+}
+
+func InitArgs() {
+
+	args := append(os.Args, os.Environ()...)
+
+	for i, arg := range args {
+		switch arg {
+		case "--config", "-f":
+			Config.Args.ConfigFile = args[i + 1]
+			break
+		case "--decrypt", "-d":
+			Config.Args.Decrypt = true
+			break
+		case "--console", "-c":
+			Config.Args.Console = true
+			break
+		case "--password", "-p":
+			Config.Args.Password = args[i + 1]
+			break
+		default:
+			break
+		}
+	}
+
+	if len(Config.Args.ConfigFile) == 0 {
+		panic("未指定配置文件。")
+	}
+}
+
+func pathJoin(str string) string {
+	return filepath.Join(Config.Dir.Base, filepath.FromSlash(path.Clean("/" + str)))
+}
+
+func InitConfiguration() {
+
+	log.Println("开始读取配置文件 : ", Config.Args.ConfigFile)
+
+	ReadConfigFile(Config.Args.ConfigFile, func(bs []byte, err error) {
+		if err != nil {
+			panic(fmt.Sprintf("读取配置文件出现一个异常：[%v]", err))
+		}
+
+		if _, err := toml.Decode(string(bs), &Config); err != nil {
+			panic(fmt.Sprintf("读取全局配置文件时出现一个异常：[%v]", err))
+		} else {
+			Config.M = make(map[string]interface{}, 0)
+			for _, v := range Config.V {
+				Config.M[v.Key] = v.Val
+			}
+			log.Println("读取配置文件成功!")
+		}
+
+		Config.Dir.LogFile = pathJoin(Config.Dir.LogFile)
+		Config.Dir.Temp = pathJoin(Config.Dir.Temp)
+		Config.Dir.Func = pathJoin(Config.Dir.Func)
+		Config.Dir.Static = pathJoin(Config.Dir.Static)
+		Config.Dir.Target = pathJoin(Config.Dir.Target)
+
+		InitArgs()
+	})
+
 }
