@@ -87,9 +87,9 @@ func packageTarget(staticDir string, targetDir string) {
 		}
 	}
 	buffer.WriteString("};")
-	jsFiles[cacheFile] = bytes.Replace(jsFiles[cacheFile], []byte("(function(w) {"), buffer.Bytes(), -1)
+	jsFiles[cacheFile] = bytes.Replace(jsFiles[cacheFile], []byte("(function (w) {"), buffer.Bytes(), -1)
 	// 重新计算 potrix.cache.js 文件的 MD5 值
-	md5Map[cacheFile] = string(global.Base64Encode(global.Md5(jsFiles[cacheFile])))
+	md5Map[cacheFile] = b64.EncodeToString(global.Md5(jsFiles[cacheFile]))
 
 	// 将模版文件中的 potrix.cache.js_stamp 替换成文件 potrix.cache.js 的 MD5 值
 	for shortPath, bs := range modelFiles {
