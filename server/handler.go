@@ -100,16 +100,12 @@ func packageTarget(staticDir string, targetDir string) {
 	}
 
 	// 对各 html、js 文件进行 onload 替换处理
-	onloadReg := regexp.MustCompile("<img[^<>]*?src=\"([^<>]*?)\"[^<>]*?/>")
+	onloadReg := regexp.MustCompile("<img[^<>]*?src=\"([^<>]*?)\"[^<>!]*?/>")
 	for _, files := range []map[string][]byte{htmlFiles, jsFiles} {
 		for shortPath, bs := range files {
 			files[shortPath] = onloadReg.ReplaceAllFunc(bs, func(match []byte) []byte {
 				subMatch := onloadReg.FindSubmatch(match)[1]
-				//if bytes.HasSuffix(subMatch, []byte(".png")) || bytes.HasSuffix(subMatch, []byte(".jpg")) {
 				return bytes.Replace(match, subMatch, []byte("data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==\" cache=\""+string(subMatch)+"\" onload=\"javascript:P.img(this);"), -1)
-				//} else {
-				//	return match
-				//}
 			})
 		}
 	}
