@@ -64,40 +64,28 @@ func packageTarget(staticDir string, targetDir string) {
 		return nil
 	})
 
+	// 对 img 文件进行 base64 处理，并在文件名后面加上 .cache
+	var imgCacheFiles map[string][]byte = make(map[string][]byte)
+	for shortPath, bs := range imgFiles {
+		imgCacheFiles[shortPath+".cache"] = []byte(b64.EncodeToString(bs))
+	}
+	imgFiles = imgCacheFiles
+
 	// 计算 html、css、js、img 文件的 MD5 值，不包括 js/potrix.cache.js
 	var cacheFile string = "js/potrix.cache.js"
 	var md5Map map[string]string = make(map[string]string)
-	var md5KeySort []string = make([]string, 0)
-	for _, files := range [](map[string][]byte){htmlFiles, cssFiles, jsFiles} {
+	for _, files := range [](map[string][]byte){htmlFiles, cssFiles, jsFiles, imgFiles} {
 		for shortPath, bs := range files {
-			if shortPath != cacheFile {
-				md5KeySort = append(md5KeySort, shortPath)
-				md5Map[shortPath] = b64.EncodeToString(global.Md5(bs))
-			}
+			md5Map[shortPath] = b64.EncodeToString(global.Md5(bs))
 		}
 	}
-	for _, files := range [](map[string][]byte){imgFiles} {
-		for shortPath, bs := range files {
-			if shortPath != cacheFile {
-				md5KeySort = append(md5KeySort, shortPath+".cache")
-				md5Map[shortPath+".cache"] = b64.EncodeToString(global.Md5(bs))
-			}
-		}
-	}
-	sort.Strings(md5KeySort)
+	delete(md5Map, cacheFile)
 
-	// 除去potrix.cache.js文件之外各文件的MD5值，并写入potrix.cache.js文件中
-	buffer := bytes.NewBuffer([]byte("(function(w) {\n    var F = {"))
-	for i, length := 0, len(md5KeySort); i < length; i++ {
-		buffer.WriteString(fmt.Sprintf("\"%s\":\"%s\"", md5KeySort[i], md5Map[md5KeySort[i]]))
-		if i < length {
-			buffer.WriteString(",")
-		}
-	}
-	buffer.WriteString("};")
-	jsFiles[cacheFile] = bytes.Replace(jsFiles[cacheFile], []byte("(function (w) {"), buffer.Bytes(), -1)
-	// 重新计算 potrix.cache.js 文件的 MD5 值
-	md5Map[cacheFile] = b64.EncodeToString(global.Md5(jsFiles[cacheFile]))
+	// 将各文件（不含 potrix.cache.js ）的 MD5 值合并成字符串，并写入 potrix.cache.js 再计算 potrix.cache.js 的 MD5 值
+	md5Map[cacheFile] = b64.EncodeToString(global.Md5(bytes.Replace(jsFiles[cacheFile], []byte("(function (w) {"), createMd5String(md5Map), -1)))
+
+	// 将各文件（包含 potrix.cache.js）的 MD5 值合并成字符串，并写入 potrix.cache.js
+	jsFiles[cacheFile] = bytes.Replace(jsFiles[cacheFile], []byte("(function (w) {"), createMd5String(md5Map), -1)
 
 	// 将模版文件中的 potrix.cache.js_stamp 替换成文件 potrix.cache.js 的 MD5 值
 	for shortPath, bs := range modelFiles {
@@ -111,8 +99,8 @@ func packageTarget(staticDir string, targetDir string) {
 		})
 	}
 
-	onloadReg := regexp.MustCompile("<img[^<>]*?src=\"([^<>]*?)\"[^<>]*?/>")
 	// 对各 html、js 文件进行 onload 替换处理
+	onloadReg := regexp.MustCompile("<img[^<>]*?src=\"([^<>]*?)\"[^<>]*?/>")
 	for _, files := range []map[string][]byte{htmlFiles, jsFiles} {
 		for shortPath, bs := range files {
 			files[shortPath] = onloadReg.ReplaceAllFunc(bs, func(match []byte) []byte {
@@ -126,13 +114,6 @@ func packageTarget(staticDir string, targetDir string) {
 		}
 	}
 
-	// 对 img 文件进行 base64 处理
-	var imgCacheFiles map[string][]byte = make(map[string][]byte)
-	for shortPath, bs := range imgFiles {
-		imgCacheFiles[shortPath+".cache"] = []byte(b64.EncodeToString(bs))
-	}
-	imgFiles = imgCacheFiles
-
 	// 对 html、js、css 进行压缩操作
 
 	// 写入各文件至输出文件夹
@@ -141,6 +122,25 @@ func packageTarget(staticDir string, targetDir string) {
 			writeToFile(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/"+shortPath))), bs)
 		}
 	}
+}
+
+func createMd5String(md5Map map[string]string) []byte {
+	var md5KeySort []string = make([]string, 0)
+	for key, _ := range md5Map {
+		md5KeySort = append(md5KeySort, key)
+	}
+	sort.Strings(md5KeySort)
+
+	buffer := bytes.NewBuffer([]byte("(function(w) {\n    var F = {"))
+	for i, length := 0, len(md5KeySort); i < length; i++ {
+		buffer.WriteString(fmt.Sprintf("\"%s\":\"%s\"", md5KeySort[i], md5Map[md5KeySort[i]]))
+		if i < length {
+			buffer.WriteString(",")
+		}
+	}
+	buffer.WriteString("};")
+
+	return buffer.Bytes()
 }
 
 func createDir(path string) {

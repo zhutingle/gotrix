@@ -21,6 +21,7 @@ import (
 
 	"github.com/scorredoira/email"
 	"github.com/tealeg/xlsx"
+	"log"
 	"regexp"
 )
 
@@ -88,6 +89,7 @@ func (this *handleFunc) init() *handleFunc {
 	this.initEmail()
 	this.initHttp()
 	this.initCall()
+	this.initDebug()
 	this.initGotrix()
 
 	return this
@@ -562,6 +564,17 @@ func (this *handleFunc) initCall() {
 			}
 		}
 		return result, nil
+	}
+}
+
+/**
+ * 定义调试相关的扩展方法
+ */
+func (this *handleFunc) initDebug() {
+	// 在控制台输出内容
+	this.methodMap["Println"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		log.Println(args...)
+		return nil, nil
 	}
 }
 
