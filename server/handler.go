@@ -41,7 +41,7 @@ func packageTarget(staticDir string, targetDir string) {
 			}
 		}
 		if f.IsDir() {
-			createDir(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/" + shortPath))))
+			createDir(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/"+shortPath))))
 			return nil
 		}
 		if strings.HasSuffix(shortPath, ".html") {
@@ -67,7 +67,7 @@ func packageTarget(staticDir string, targetDir string) {
 	// 对 img 文件进行 base64 处理，并在文件名后面加上 .cache
 	var imgCacheFiles map[string][]byte = make(map[string][]byte)
 	for shortPath, bs := range imgFiles {
-		imgCacheFiles[shortPath + ".cache"] = []byte(b64.EncodeToString(bs))
+		imgCacheFiles[shortPath+".cache"] = []byte(b64.EncodeToString(bs))
 	}
 	imgFiles = imgCacheFiles
 
@@ -100,16 +100,16 @@ func packageTarget(staticDir string, targetDir string) {
 	}
 
 	// 对各 html、js 文件进行 onload 替换处理
-	onloadReg := regexp.MustCompile("<img[^<>]*?src=\"([\\w/\\\\]*?)\"[^<>!]*?/>")
+	onloadReg := regexp.MustCompile("<img[^<>]*?src=\"([^<>!]*?)\"[^<>!]*?/>")
 	for _, files := range []map[string][]byte{htmlFiles, jsFiles} {
 		for shortPath, bs := range files {
-			fmt.Println(shortPath)
+			if strings.HasSuffix(shortPath, "min.js") {
+				continue
+			}
 			files[shortPath] = onloadReg.ReplaceAllFunc(bs, func(match []byte) []byte {
 				subMatch := onloadReg.FindSubmatch(match)[1]
-				fmt.Println(string(match))
-				return bytes.Replace(match, subMatch, []byte("data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==\" cache=\"" + string(subMatch) + "\" onload=\"javascript:P.img(this);"), -1)
+				return bytes.Replace(match, subMatch, []byte("data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==\" cache=\""+string(subMatch)+"\" onload=\"javascript:P.img(this);"), -1)
 			})
-			fmt.Println()
 		}
 	}
 
@@ -118,7 +118,7 @@ func packageTarget(staticDir string, targetDir string) {
 	// 写入各文件至输出文件夹
 	for _, files := range []map[string][]byte{htmlFiles, jsFiles, cssFiles, imgFiles} {
 		for shortPath, bs := range files {
-			writeToFile(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/" + shortPath))), bs)
+			writeToFile(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/"+shortPath))), bs)
 		}
 	}
 }
@@ -192,7 +192,7 @@ func parseHtml(content []byte, getModel func(modelName string) ([]byte, error)) 
 	}
 
 	newContent := regexp.MustCompile("\\$\\{\\w*\\}").ReplaceAllFunc(modelContent, func(bs []byte) []byte {
-		return []byte(html[string(bs[2:len(bs) - 1])])
+		return []byte(html[string(bs[2:len(bs)-1])])
 	})
 
 	return newContent
@@ -201,7 +201,7 @@ func parseHtml(content []byte, getModel func(modelName string) ([]byte, error)) 
 func parseHtmlFromFile(content []byte, dir string) []byte {
 
 	return parseHtml(content, func(modelName string) ([]byte, error) {
-		model, err := os.Open(filepath.Join(dir, filepath.FromSlash(path.Clean("/" + modelName))))
+		model, err := os.Open(filepath.Join(dir, filepath.FromSlash(path.Clean("/"+modelName))))
 		if err != nil {
 			log.Println("打开模版文件[", modelName, "]时出现异常：", err)
 			return []byte(""), nil
