@@ -29,6 +29,7 @@ func packageTarget(staticDir string, targetDir string) {
 	var cssFiles map[string][]byte = make(map[string][]byte)
 	var jsFiles map[string][]byte = make(map[string][]byte)
 	var imgFiles map[string][]byte = make(map[string][]byte)
+	var imgCacheFiles map[string][]byte = make(map[string][]byte)
 
 	// 遍历静态文件夹，并进行文件分类操作，并在输出文件夹中创建各子文件夹
 	filepath.Walk(staticDir, func(longPath string, f os.FileInfo, err error) error {
@@ -41,7 +42,7 @@ func packageTarget(staticDir string, targetDir string) {
 			}
 		}
 		if f.IsDir() {
-			createDir(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/"+shortPath))))
+			createDir(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/" + shortPath))))
 			return nil
 		}
 		if strings.HasSuffix(shortPath, ".html") {
@@ -55,7 +56,7 @@ func packageTarget(staticDir string, targetDir string) {
 			cssFiles[shortPath], err = ioutil.ReadFile(longPath)
 		} else if strings.HasSuffix(shortPath, ".js") {
 			jsFiles[shortPath], err = ioutil.ReadFile(longPath)
-		} else if strings.HasSuffix(shortPath, ".png") || strings.HasSuffix(shortPath, ".jpg") || strings.HasSuffix(shortPath, ".jpeg") {
+		} else if strings.HasSuffix(shortPath, ".png") || strings.HasSuffix(shortPath, ".jpg") || strings.HasSuffix(shortPath, ".jpeg") || strings.HasSuffix(shortPath, ".gif") {
 			imgFiles[shortPath], err = ioutil.ReadFile(longPath)
 		}
 		if err != nil {
@@ -65,11 +66,27 @@ func packageTarget(staticDir string, targetDir string) {
 	})
 
 	// 对 img 文件进行 base64 处理，并在文件名后面加上 .cache
-	var imgCacheFiles map[string][]byte = make(map[string][]byte)
 	for shortPath, bs := range imgFiles {
-		imgCacheFiles[shortPath+".cache"] = []byte(b64.EncodeToString(bs))
+		imgCacheFiles[shortPath + ".cache"] = []byte(b64.EncodeToString(bs))
 	}
-	imgFiles = imgCacheFiles
+
+	// 对各 html、js 文件进行 onload 替换处理
+	onloadReg := regexp.MustCompile("<img[^<>]*?src=\"([^+<>!\\s]*?)\"[^<>]*?>")
+	for _, files := range []map[string][]byte{htmlFiles, jsFiles} {
+		for shortPath, bs := range files {
+			files[shortPath] = onloadReg.ReplaceAllFunc(bs, func(match []byte) []byte {
+				subMatch := onloadReg.FindSubmatch(match)[1]
+				if bytes.HasSuffix(match, []byte("/>")) {
+					return bytes.Replace(match, subMatch, []byte("data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==\" cache=\"" + string(subMatch) + "\" onload=\"javascript:P.img(this);"), -1)
+				} else {
+					imgCacheFiles[string(subMatch)] = imgFiles[string(subMatch)]
+					return match
+				}
+			})
+		}
+	}
+
+	// 对 html、js、css 进行压缩操作
 
 	// 计算 html、css、js、img 文件的 MD5 值，不包括 js/potrix.cache.js
 	var cacheFile string = "js/potrix.cache.js"
@@ -99,26 +116,10 @@ func packageTarget(staticDir string, targetDir string) {
 		})
 	}
 
-	// 对各 html、js 文件进行 onload 替换处理
-	onloadReg := regexp.MustCompile("<img[^<>]*?src=\"([^<>!]*?)\"[^<>!]*?/>")
-	for _, files := range []map[string][]byte{htmlFiles, jsFiles} {
-		for shortPath, bs := range files {
-			if strings.HasSuffix(shortPath, "min.js") {
-				continue
-			}
-			files[shortPath] = onloadReg.ReplaceAllFunc(bs, func(match []byte) []byte {
-				subMatch := onloadReg.FindSubmatch(match)[1]
-				return bytes.Replace(match, subMatch, []byte("data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==\" cache=\""+string(subMatch)+"\" onload=\"javascript:P.img(this);"), -1)
-			})
-		}
-	}
-
-	// 对 html、js、css 进行压缩操作
-
 	// 写入各文件至输出文件夹
-	for _, files := range []map[string][]byte{htmlFiles, jsFiles, cssFiles, imgFiles} {
+	for _, files := range []map[string][]byte{htmlFiles, jsFiles, cssFiles, imgCacheFiles} {
 		for shortPath, bs := range files {
-			writeToFile(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/"+shortPath))), bs)
+			writeToFile(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/" + shortPath))), bs)
 		}
 	}
 }
@@ -192,7 +193,7 @@ func parseHtml(content []byte, getModel func(modelName string) ([]byte, error)) 
 	}
 
 	newContent := regexp.MustCompile("\\$\\{\\w*\\}").ReplaceAllFunc(modelContent, func(bs []byte) []byte {
-		return []byte(html[string(bs[2:len(bs)-1])])
+		return []byte(html[string(bs[2:len(bs) - 1])])
 	})
 
 	return newContent
@@ -201,7 +202,7 @@ func parseHtml(content []byte, getModel func(modelName string) ([]byte, error)) 
 func parseHtmlFromFile(content []byte, dir string) []byte {
 
 	return parseHtml(content, func(modelName string) ([]byte, error) {
-		model, err := os.Open(filepath.Join(dir, filepath.FromSlash(path.Clean("/"+modelName))))
+		model, err := os.Open(filepath.Join(dir, filepath.FromSlash(path.Clean("/" + modelName))))
 		if err != nil {
 			log.Println("打开模版文件[", modelName, "]时出现异常：", err)
 			return []byte(""), nil
