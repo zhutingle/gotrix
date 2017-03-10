@@ -217,23 +217,25 @@ func WxRequest(param map[string]interface{}, url string) (returnMap map[string]i
 	bytes_req := toXmlBytes(param)
 	req, err := http.NewRequest("POST", url, bytes.NewReader(bytes_req))
 	if err != nil {
-		fmt.Println("New Http Request 发生错误，原因：", err)
+		fmt.Println("New Http Request 发生错误：", err)
 		return
 	}
 	req.Header.Set("Accpt", "application/xml")
 	req.Header.Set("Content-type", "application/xml;charset=utf-8")
 
 	c := http.Client{}
-	resp, _err := c.Do(req)
-	if _err != nil {
-		fmt.Println("微信调用接口时发生错误，原因：", _err)
+	resp, err := c.Do(req)
+	if err != nil {
+		fmt.Println("微信调用接口时发生错误：", err)
 		return
 	}
 
-	length := resp.ContentLength
-	body := make([]byte, length)
-	resp.Body.Read(body)
 	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println("微信调用接口，读取返回值时发生错误：", err)
+		return
+	}
 
 	returnMap = fromXmlBytes(body)
 
