@@ -184,7 +184,7 @@ func dealWithParam(params []Param) []Param {
 			params[i].Valid = arrayValid
 			break
 		default:
-			params = append(params[:i], params[i+1:]...)
+			params = append(params[:i], params[i + 1:]...)
 			i--
 			break
 		}
@@ -194,7 +194,7 @@ func dealWithParam(params []Param) []Param {
 
 func dealWithJob(jobs []Job) {
 	// 去掉Job的<![CDATA[]]>标签
-	cdataExp := regexp.MustCompile("^<!\\[CDATA\\[(.*?)\\]\\]>$")
+	cdataExp := regexp.MustCompile("^<!\\[CDATA\\[([\\w\\W]*?)\\]\\]>$")
 	autoExp := regexp.MustCompile("<auto>.*?</auto>")
 	for j := 0; j < len(jobs); j++ {
 		flag := cdataExp.MatchString(jobs[j].Job)
