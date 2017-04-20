@@ -103,11 +103,11 @@ func (this *handleSql) handle(job *Job, cp *global.CheckedParams) (result interf
 	stmt, err := this.db.Prepare(sqlStr)
 	if err != nil {
 		log.Println(err)
-		gErr = global.SQLHANDLE_PREPARE_ERROR
+		gErr = global.SQLHANDLE_EXECUTE_ERROR
 		return
 	}
 
-	if strings.HasPrefix(sqlStr, "select") {
+	if regexp.MustCompile("^(?i:select)").MatchString(sqlStr) {
 		// 对 select 语句进行处理
 		rows, err := stmt.Query(args...)
 		if err != nil {

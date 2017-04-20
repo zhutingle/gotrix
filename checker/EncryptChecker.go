@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/zhutingle/gotrix/global"
+	"fmt"
 )
 
 type EncryptChecker struct {
@@ -73,6 +74,7 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 
 	var pass []byte
 	var userId int64
+	fmt.Println(aesPass)
 	switch aesPass.(type) {
 	case string:
 		pass = []byte(aesPass.(string))
@@ -85,7 +87,7 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 	case map[string]interface{}:
 		passJson := aesPass.(map[string]interface{})
 		if passJson["id"] != nil {
-			userId = int64(passJson["id"].(float64))
+			userId, e = global.ToInt64(passJson["id"])
 		}
 		for _, val := range passJson {
 

@@ -41,9 +41,9 @@ func (this *handleFunc) handle(job *Job, cp *global.CheckedParams) (result inter
 	for j := 0; j < len(strs); j++ {
 		str := strs[j][1]
 		if str[0] == '$' {
-			args = append(args, cp.V[str[2:len(str)-1]])
+			args = append(args, cp.V[str[2:len(str) - 1]])
 		} else if str[0] == '\'' {
-			args = append(args, str[1:len(str)-1])
+			args = append(args, str[1:len(str) - 1])
 		} else {
 			int64Value, err := strconv.ParseInt(str, 10, 64)
 			if err == nil {
@@ -165,8 +165,8 @@ func (this *handleFunc) initJson() {
 			params = make(map[string]interface{})
 			i = 0
 		}
-		for ; i <= len(args)-2; i = i + 2 {
-			params[args[i].(string)] = args[i+1]
+		for ; i <= len(args) - 2; i = i + 2 {
+			params[args[i].(string)] = args[i + 1]
 		}
 		return params, nil
 	}
@@ -311,6 +311,7 @@ func (this *handleFunc) initSpecial() {
 		P := ecdh.PublicKey(randKey, x, y)
 
 		var returnJson map[string]interface{} = make(map[string]interface{})
+		returnJson["id"] = id
 		returnJson["x"] = S.GetX().ToBigInteger().ToString(16)
 		returnJson["y"] = S.GetY().ToBigInteger().ToString(16)
 
@@ -656,7 +657,7 @@ func (this *handleFunc) initGotrix() {
 				for i, lenI := 0, len(d.Jobs); i < lenI; i++ {
 					allParam := paramReg.FindAllString(d.Jobs[i].Job, -1)
 					for j, lenJ := 0, len(allParam); j < lenJ; j++ {
-						jobs = append(jobs, allParam[j][2:len(allParam[j])-1])
+						jobs = append(jobs, allParam[j][2:len(allParam[j]) - 1])
 					}
 					if d.Jobs[i].Type == "pagination" {
 						pagination = true
