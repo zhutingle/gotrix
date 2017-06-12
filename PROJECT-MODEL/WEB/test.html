@@ -1,0 +1,24 @@
+<html model="sp/model.html">
+<head>
+    <title>Gotrix-API文档</title>
+    <style type="text/css">
+
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+
+    testUserNamePasswordLogin();
+
+    // 测试使用账号密码登陆
+    function testUserNamePasswordLogin() {
+        P.loginIn('gotrix', 'gotrix', function () {
+            P.req({
+                func: 12
+            });
+        });
+    }
+</script>
+</body>
+</html>
