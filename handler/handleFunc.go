@@ -21,7 +21,11 @@ import (
 
 	"github.com/scorredoira/email"
 	"github.com/tealeg/xlsx"
+	"io"
 	"log"
+	"mime/multipart"
+	"os"
+	"path/filepath"
 	"regexp"
 )
 
@@ -138,15 +142,18 @@ func (this *handleFunc) initJson() {
 		if args[0] == nil {
 			return nil, global.FUNC_JGET_NIL_ERROR
 		}
-		var params = args[0].(map[string]interface{})
-		if len(args) == 2 {
-			return params[args[1].(string)], nil
+		if params, ok := args[0].(map[string]interface{}); ok {
+			if len(args) == 2 {
+				return params[global.ToStringMust(args[1])], nil
+			}
+			var returnJson map[string]interface{} = make(map[string]interface{})
+			for i := 1; i < len(args); i++ {
+				returnJson[args[i].(string)] = params[global.ToStringMust(args[i])]
+			}
+			return returnJson, nil
+		} else {
+			return nil, global.FUNC_JGET_PARAM_ERROR
 		}
-		var returnJson map[string]interface{} = make(map[string]interface{})
-		for i := 1; i < len(args); i++ {
-			returnJson[args[i].(string)] = params[args[i].(string)]
-		}
-		return returnJson, nil
 	}
 	// Jset(map[string]interface{},(string,interface{})...)
 	// 设置 JSON 中的某些键值对，并返回该 JSON
@@ -317,9 +324,13 @@ func (this *handleFunc) initSpecial() {
 
 		session := ecdh.Rand()
 		session.DMultiply(id)
-		sessionHex := session.ToString(16)[:40]
-		for len(sessionHex) < 40 {
-			sessionHex += "0"
+		sessionHex := session.ToString(16)
+		if len(sessionHex) > 40 {
+			sessionHex = sessionHex[len(sessionHex) - 40:]
+		} else if len(sessionHex) < 40 {
+			for len(sessionHex) < 40 {
+				sessionHex += "0"
+			}
 		}
 		returnJson["session"] = sessionHex
 
@@ -402,6 +413,48 @@ func (this *handleFunc) initSpecial() {
  * 定义所有xlsx操作相关的函数
  */
 func (this *handleFunc) initXlsx() {
+	this.methodMap["FromXlsx"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		fileName := args[0].(string)
+
+		f, err := xlsx.OpenFile(fileName)
+		if err != nil {
+			log.Println(err)
+			return nil, global.FROMXLS_OPEN_FILE_ERROR
+		}
+
+		data := make([]interface{}, 0)
+		colNames := []string{}
+		maxRow := len(f.Sheets[0].Rows)
+		maxCol := len(f.Sheets[0].Rows[0].Cells)
+
+		if maxRow > 0 {
+			for j := 0; j < maxCol; j++ {
+				str, err := f.Sheets[0].Rows[0].Cells[j].String()
+				if err != nil {
+					log.Print(err)
+					colNames = append(colNames, strconv.FormatInt(int64(j), 10))
+				} else {
+					colNames = append(colNames, str)
+				}
+			}
+		}
+
+		for i := 1; i < maxRow; i++ {
+			row := make(map[string]interface{})
+			for j := 0; j < maxCol; j++ {
+				str, err := f.Sheets[0].Rows[i].Cells[j].String()
+				if err != nil {
+					log.Println(err)
+					row[colNames[j]] = ""
+				} else {
+					row[colNames[j]] = str
+				}
+			}
+			data = append(data, row)
+		}
+
+		return data, nil
+	}
 	this.methodMap["ToXls"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
 		data := args[0].([]interface{})
 		columnStr := args[1].(string)
@@ -435,13 +488,62 @@ func (this *handleFunc) initXlsx() {
 			}
 		}
 
-		filePath := global.Config.Dir.Temp + fileName + ".xlsx"
+		filePath := global.Config.WEB.Temp + fileName + ".xlsx"
 		err = file.Save(filePath)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 
 		return filePath, nil
+	}
+	this.methodMap["UploadImg"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		// 参数个数的判断
+		if len(args) != 2 {
+			gErr = global.UPLOADIMG_PARAM_NUMBER_ERROR
+			return
+		}
+
+		// 对第一个参数的判断
+		var fh *multipart.FileHeader
+		var ok bool
+		if fh, ok = args[0].(*multipart.FileHeader); !ok {
+			gErr = global.UPLOADIMG_PARAM_1_ERROR
+			return
+		}
+
+		// 对第二个参数的判断
+		var path string
+		if path, ok = args[1].(string); !ok {
+			gErr = global.UPLOADIMG_PARAM_2_ERROR
+			return
+		}
+
+		// 打开上传的文件
+		file, err := fh.Open()
+		if err != nil {
+			gErr = global.UPLOADIMG_OPEN_UPLOAD_FILE_ERROR
+			return
+		}
+		defer file.Close()
+
+		// 创建新文件
+		newFileName := time.Now().Format("2006-01-02 15:04:05") + "_" + global.ToStringMust(time.Now().Nanosecond()) + fh.Filename[strings.LastIndex(fh.Filename, "."):]
+		f, err := os.Create(filepath.Clean(path + string(filepath.Separator) + newFileName))
+		if err != nil {
+			gErr = global.UPLOADIMG_CREATE_NEW_FILE_ERROR
+			return
+		}
+		defer f.Close()
+
+		// 复制文件
+		_, err = io.Copy(f, file)
+		if err != nil {
+			gErr = global.UPLOADIMG_COPY_FILE_ERROR
+			return
+		}
+
+		// 返回新文件名称
+		return newFileName, nil
 	}
 }
 
@@ -566,6 +668,24 @@ func (this *handleFunc) initCall() {
 		}
 		return result, nil
 	}
+	// 数组循环设置 JAeachSet(${array},'ID',${ID},'name',${name},...)
+	this.methodMap["JAeachSet"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		if args[0] == nil {
+			return nil, nil
+		}
+		ja := args[0].([]interface{})
+
+		for i, l := 0, len(ja); i < l; i++ {
+
+			v := ja[i].(map[string]interface{})
+
+			for j := 1; j <= len(args) - 2; j = j + 2 {
+				v[args[j].(string)] = args[j + 1]
+			}
+		}
+
+		return
+	}
 }
 
 /**
@@ -575,7 +695,22 @@ func (this *handleFunc) initDebug() {
 	// 在控制台输出内容
 	this.methodMap["Println"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
 		log.Println(args...)
-		return nil, nil
+		return
+	}
+	this.methodMap["Test"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+
+		WorkAddMap := make(map[string]interface{})
+		infos := args[0].([]interface{})
+		for _, info := range infos {
+			d := info.(map[string]interface{})
+			WorkAddMap[d["WorkGroup"].(string)] = ""
+		}
+
+		for key, _ := range WorkAddMap {
+			fmt.Println(key)
+		}
+
+		return
 	}
 }
 
@@ -583,6 +718,25 @@ func (this *handleFunc) initDebug() {
  * 定义操作框架本身的扩展方法
  */
 func (this *handleFunc) initGotrix() {
+	// 设置 Session
+	this.methodMap["SetSession"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		session := args[0].(string)
+		content := args[1]
+		global.SessionMap[session] = content
+		return
+	}
+	// 取得 Session
+	this.methodMap["GetSession"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		session := args[0].(string)
+		response = global.SessionMap[session]
+		return
+	}
+	// 删除 Session
+	this.methodMap["DelSession"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		session := args[0].(string)
+		delete(global.SessionMap, session)
+		return
+	}
 	// 获取所有有权限的页面
 	this.methodMap["GetPermissionedPages"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
 		funcsStr := args[0].(string)

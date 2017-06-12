@@ -16,7 +16,8 @@ var Config Configuration
 
 type Configuration struct {
 	Args     Args
-	Dir      Dir
+	WEB      Dir
+	CMS      Dir
 	Redis    Redis
 	Database Database
 	WxCert   WxCert
@@ -30,11 +31,11 @@ type Args struct {
 	Decrypt    bool   // 控制台参数 --decrypt
 	Console    bool   // 控制台参数 --console
 	Password   string // 控制台参数 --password {{password}}
-	Port       int64  // 端口号
 	Debug      bool
 }
 
 type Dir struct {
+	Port    int64  // 提供服务的端口号
 	Base    string // 基目录，其它一切目录都基于此
 	Temp    string // 临时文件夹
 	LogFile string // 日志文件
@@ -87,7 +88,7 @@ func InitArgs() {
 	for i, arg := range args {
 		switch arg {
 		case "--config", "-f":
-			Config.Args.ConfigFile = args[i+1]
+			Config.Args.ConfigFile = args[i + 1]
 			break
 		case "--decrypt", "-d":
 			Config.Args.Decrypt = true
@@ -96,7 +97,7 @@ func InitArgs() {
 			Config.Args.Console = true
 			break
 		case "--password", "-p":
-			Config.Args.Password = args[i+1]
+			Config.Args.Password = args[i + 1]
 			break
 		default:
 			break
@@ -114,13 +115,38 @@ func InitArgs() {
 	}
 }
 
-func pathJoin(str string) string {
-	return filepath.Join(Config.Dir.Base, filepath.FromSlash(path.Clean("/"+str)))
-}
-
 func InitConfiguration() {
 
 	log.Println("开始读取配置文件 : ", Config.Args.ConfigFile)
+
+	// 根据配置文件的位置，设置默认参数，并按照如下约定自动设置其文件夹
+	// project
+	//     --WEB
+	//     --WEB-FUNC
+	//     --WEB-TEMP
+	//     --WEB-TARGET
+	//     --CMS
+	//     --CMS-FUNC
+	//     --CMS-TEMP
+	//     --CMS-TARGET
+	//     gotrix.conf
+	//     web.log
+	//     cms.log
+	Config.WEB.Base = filepath.Dir(Config.Args.ConfigFile)
+	Config.WEB.Port = 9080
+	Config.WEB.Temp = "/WEB-TEMP"
+	Config.WEB.LogFile = "/web.log"
+	Config.WEB.Func = "/WEB-FUNC"
+	Config.WEB.Static = "/WEB"
+	Config.WEB.Target = "/WEB-TARGET"
+
+	Config.CMS.Base = filepath.Dir(Config.Args.ConfigFile)
+	Config.CMS.Port = 9088
+	Config.CMS.Temp = "/CMS-TEMP"
+	Config.CMS.LogFile = "/cms.log"
+	Config.CMS.Func = "/CMS-FUNC"
+	Config.CMS.Static = "/CMS"
+	Config.CMS.Target = "/WEB-TARGET"
 
 	ReadConfigFile(Config.Args.ConfigFile, func(bs []byte, err error) {
 		if err != nil {
@@ -129,19 +155,25 @@ func InitConfiguration() {
 
 		if _, err := toml.Decode(string(bs), &Config); err != nil {
 			panic(fmt.Sprintf("读取全局配置文件时出现一个异常：[%v]", err))
-		} else {
-			Config.M = make(map[string]interface{}, 0)
-			for _, v := range Config.V {
-				Config.M[v.Key] = v.Val
-			}
-			log.Println("读取配置文件成功!")
 		}
 
-		Config.Dir.LogFile = pathJoin(Config.Dir.LogFile)
-		Config.Dir.Temp = pathJoin(Config.Dir.Temp)
-		Config.Dir.Func = pathJoin(Config.Dir.Func)
-		Config.Dir.Static = pathJoin(Config.Dir.Static)
-		Config.Dir.Target = pathJoin(Config.Dir.Target)
+		Config.M = make(map[string]interface{}, 0)
+		for _, v := range Config.V {
+			Config.M[v.Key] = v.Val
+		}
+		log.Println("读取配置文件成功!")
+
+		Config.WEB.Temp = path.Clean(Config.WEB.Base + Config.WEB.Temp)
+		Config.WEB.LogFile = path.Clean(Config.WEB.Base + Config.WEB.LogFile)
+		Config.WEB.Func = path.Clean(Config.WEB.Base + Config.WEB.Func)
+		Config.WEB.Static = path.Clean(Config.WEB.Base + Config.WEB.Static)
+		Config.WEB.Target = path.Clean(Config.WEB.Base + Config.WEB.Target)
+
+		Config.CMS.Temp = path.Clean(Config.CMS.Base + Config.CMS.Temp)
+		Config.CMS.LogFile = path.Clean(Config.CMS.Base + Config.CMS.LogFile)
+		Config.CMS.Func = path.Clean(Config.CMS.Base + Config.CMS.Func)
+		Config.CMS.Static = path.Clean(Config.CMS.Base + Config.CMS.Static)
+		Config.CMS.Target = path.Clean(Config.CMS.Base + Config.CMS.Target)
 
 		InitArgs()
 	})

@@ -7,7 +7,7 @@ import (
 	"net/http"
 
 	"github.com/zhutingle/gotrix/global"
-	"fmt"
+	"strings"
 )
 
 type EncryptChecker struct {
@@ -22,20 +22,50 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 		return
 	}
 
-	var reader io.Reader = r.Body
-	b, e := ioutil.ReadAll(reader)
-	if e != nil {
-		gErr = global.READ_BODY_ERROR
-		return
+	var b []byte
+	var e error
+
+	if strings.Index(r.Header.Get("Content-Type"), "multipart/form-data") == 0 {
+		// 文件上传
+		e = r.ParseMultipartForm(1 << 20)
+		if e != nil {
+			gErr = global.READ_BODY_ERROR
+			return
+		}
+
+		data := r.MultipartForm.Value["data"]
+		if data == nil || len(data) == 0 {
+			gErr = global.READ_BODY_ERROR
+			return
+		}
+
+		b = []byte(data[0])
+
+		if r.MultipartForm != nil && r.MultipartForm.File != nil {
+			for name, fhs := range r.MultipartForm.File {
+				if fhs != nil && len(fhs) > 0 {
+					checkedParams.V[name] = fhs[0]
+				}
+			}
+		}
+
+	} else {
+		// 非文件上传
+		var reader io.Reader = r.Body
+		b, e = ioutil.ReadAll(reader)
+		if e != nil {
+			gErr = global.READ_BODY_ERROR
+			return
+		}
 	}
 
-	i, len := 0, len(b)
-	for ; i < len; i++ {
+	i, length := 0, len(b)
+	for ; i < length; i++ {
 		if b[i] == '=' {
 			break
 		}
 	}
-	if i == 0 || i >= len {
+	if i == 0 || i >= length {
 		gErr = global.BODY_SCHEME_ERROR
 		return
 	}
@@ -74,12 +104,11 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 
 	var pass []byte
 	var userId int64
-	fmt.Println(aesPass)
 	switch aesPass.(type) {
 	case string:
 		pass = []byte(aesPass.(string))
 		var decryptBytes []byte
-		decryptBytes, e = global.AesDecrypt(b[i + 1:], pass, 256)
+		decryptBytes, e = global.AesDecrypt(b[i+1:], pass, 256)
 		if e == nil {
 			e = json.Unmarshal(decryptBytes, &(checkedParams.V))
 		}
@@ -94,7 +123,7 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 			if _, ok := val.(string); ok {
 				pass = []byte(val.(string))
 				var decryptBytes []byte
-				decryptBytes, e = global.AesDecrypt(b[i + 1:], pass, 256)
+				decryptBytes, e = global.AesDecrypt(b[i+1:], pass, 256)
 				if e != nil {
 					continue
 				}
@@ -129,9 +158,9 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 		checkedParams.Pass = pass
 		checkedParams.Checked = true
 		checkedParams.Self = self
-		checkedParams.V["userid"] = userId
-		checkedParams.V["token"] = string(b[:i])
-		checkedParams.V["_ip"] = r.Header.Get("X-Forward-For")
+		checkedParams.V["ID"] = userId
+		checkedParams.V["TOKEN"] = string(b[:i])
+		checkedParams.V["IP"] = r.Header.Get("X-Forward-For")
 		gErr = handler.CheckPermission(userId, checkedParams.Func)
 		break
 	default:

@@ -24,15 +24,11 @@ func (d DevDir) Open(name string) (http.File, error) {
 	if dir == "" {
 		dir = "."
 	}
-	f, err := os.Open(filepath.Join(dir, filepath.FromSlash(path.Clean("/"+name))))
+	f, err := os.Open(filepath.Join(dir, filepath.FromSlash(path.Clean("/" + name))))
 	if err != nil {
-		return nil, err
+		return newDevFileWithString(name[1:]), nil
 	}
-	if strings.HasSuffix(name, "html") {
-		return newDevFile(f, dir), nil
-	} else {
-		return f, nil
-	}
+	return newDevFile(f, dir), nil
 }
 
 type DevFile struct {
@@ -40,10 +36,16 @@ type DevFile struct {
 	fileInfo os.FileInfo
 	bs       []byte
 	cur      int64
+	fileName string
 }
 
 func (f *DevFile) Close() error {
-	return f.file.Close()
+	if f != nil && f.file != nil {
+		return f.file.Close()
+	} else {
+		return nil
+	}
+
 }
 
 func (f *DevFile) Read(p []byte) (n int, err error) {
@@ -84,24 +86,44 @@ func (f *DevFile) Readdir(count int) ([]os.FileInfo, error) {
 func (f *DevFile) Stat() (os.FileInfo, error) {
 	return f, nil
 }
-
 func (f *DevFile) Name() string {
-	return f.fileInfo.Name()
+	if f.fileInfo != nil {
+		return f.fileInfo.Name()
+	} else {
+		return f.fileName
+	}
 }
 func (f *DevFile) Size() int64 {
 	return int64(len(f.bs))
 }
 func (f *DevFile) Mode() os.FileMode {
-	return f.fileInfo.Mode()
+	if f.fileInfo != nil {
+		return f.fileInfo.Mode()
+	} else {
+		return os.ModePerm
+	}
 }
 func (f *DevFile) ModTime() time.Time {
-	return f.fileInfo.ModTime()
+	if f.fileInfo != nil {
+		return f.fileInfo.ModTime()
+	} else {
+		return time.Now()
+	}
 }
 func (f *DevFile) IsDir() bool {
-	return f.fileInfo.IsDir()
+	if f != nil && f.fileInfo != nil {
+		return f.fileInfo.IsDir()
+	} else {
+		return false;
+	}
+
 }
 func (f *DevFile) Sys() interface{} {
-	return f.fileInfo.Sys()
+	if f.fileInfo != nil {
+		return f.fileInfo.Sys()
+	} else {
+		return nil
+	}
 }
 
 func newDevFile(f http.File, dir string) *DevFile {
@@ -115,5 +137,17 @@ func newDevFile(f http.File, dir string) *DevFile {
 		log.Print("获取文件信息时出现异常：", err)
 	}
 
-	return &DevFile{file: f, fileInfo: fileInfo, bs: parseHtmlFromFile(bs, dir), cur: 0}
+	if strings.HasSuffix(fileInfo.Name(), "html") {
+		return &DevFile{file: f, fileInfo: fileInfo, bs: parseHtmlFromFile(bs, dir), cur: 0}
+	} else {
+		return &DevFile{file: f, fileInfo: fileInfo, bs: bs, cur: 0}
+	}
+}
+
+func newDevFileWithString(fileName string) *DevFile {
+	bs := parseFromB64(fileName)
+	if bs == nil {
+		return nil
+	}
+	return &DevFile{bs: bs, cur: 0, fileName:fileName}
 }

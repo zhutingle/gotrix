@@ -20,7 +20,7 @@ type Handle interface {
 
 func (this SimpleHandler) Init() {
 
-	readXmlFolder(this, global.Config.Dir.Func)
+	readXmlFolder(this, global.Config.WEB.Func)
 
 	this.cronTask()
 
@@ -93,13 +93,13 @@ func (this SimpleHandler) jobHandle(handleFunc *Func, checkedParams *global.Chec
 
 func (this SimpleHandler) GetPass(token []byte) (interface{}, *global.GotrixError) {
 	var checkedParams *global.CheckedParams = &global.CheckedParams{Func: 0, V: make(map[string]interface{})}
-	checkedParams.V["token"] = string(token)
+	checkedParams.V["TOKEN"] = string(token)
 	return this.Handle(checkedParams)
 }
 
 func (this SimpleHandler) GetSession(token []byte) (interface{}, *global.GotrixError) {
 	var checkedParams *global.CheckedParams = &global.CheckedParams{Func: 1, V: make(map[string]interface{})}
-	checkedParams.V["token"] = string(token)
+	checkedParams.V["TOKEN"] = string(token)
 	return this.Handle(checkedParams)
 }
 

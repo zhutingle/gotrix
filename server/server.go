@@ -32,11 +32,11 @@ func GotrixServer() {
 				Server()
 			} else {
 				filePath, _ := filepath.Abs(os.Args[0])
-				logFile, err := os.Create(global.Config.Dir.LogFile)
+				logFile, err := os.Create(global.Config.WEB.LogFile)
 				if err != nil {
 					panic(fmt.Sprintf("创建日志文件时出现异常：%v", err))
 				}
-				log.Println("日志文件创建成功：", global.Config.Dir.LogFile)
+				log.Println("日志文件创建成功：", global.Config.WEB.LogFile)
 
 				process, err := os.StartProcess(filePath, os.Args, &os.ProcAttr{Env: []string{"--console", "--password", global.Config.Args.Password}, Files: []*os.File{logFile, logFile, logFile}})
 				if err != nil {
@@ -45,17 +45,28 @@ func GotrixServer() {
 				log.Println("新进程创建成功：", process)
 			}
 			break
+		case "static":
+			// 用于处理静态资源文件，将基础静态资源文件复制到 Gotrix 代码中，则其它项目默认就有这些静态资源文件
+			packageToGotrix(global.Config.WEB.Static, "static.go")
+			packageToGotrix(global.Config.WEB.Func, "func.go")
+			break
+		case "init":
+			// TODO
+			// 用于初始化基础数据表
+			// 数据字典表 dict dicti
+			// 用户表 user
+			// 角色表 role
+			// 功能表 func
+			break
 		}
 	}
 
-	//		gotrixHandler = handler.SimpleHandler{}
-	//		gotrixHandler.Init()
-	//		checkedParams := &global.CheckedParams{Func: 1005, V: make(map[string]interface{})}
-	//		checkedParams.V["userid"] = 164
-	//		checkedParams.V["orderId"] = 69
-	//		response, err := gotrixHandler.Handle(checkedParams)
-	//		log.Println(response)
-	//		log.Println(err)
+	//gotrixHandler = handler.SimpleHandler{}
+	//gotrixHandler.Init()
+	//checkedParams := &global.CheckedParams{Func: 100, V: make(map[string]interface{})}
+	//response, err := gotrixHandler.Handle(checkedParams)
+	//log.Println(response)
+	//log.Println(err)
 
 }
 
@@ -94,13 +105,13 @@ func Server() {
 
 	// Debug 模式和非 Debug 模式的区别全写在这里，其它地方不允许写
 	if global.Config.Args.Debug {
-		http.Handle("/", http.FileServer(DevDir(global.Config.Dir.Static)))
+		http.Handle("/", http.FileServer(DevDir(global.Config.WEB.Static)))
 	} else {
-		packageTarget(global.Config.Dir.Static, global.Config.Dir.Target)
-		http.Handle("/", http.FileServer(http.Dir(global.Config.Dir.Target)))
+		packageTarget(global.Config.WEB.Static, global.Config.WEB.Target)
+		http.Handle("/", http.FileServer(http.Dir(global.Config.WEB.Target)))
 	}
 
-	err := http.ListenAndServe(fmt.Sprint(":", global.Config.Args.Port), nil)
+	err := http.ListenAndServe(fmt.Sprint(":", global.Config.WEB.Port), nil)
 	if err != nil {
 		log.Fatal("ListenAndServe", err)
 	}
@@ -189,3 +200,5 @@ func wxpayCallback(w http.ResponseWriter, r *http.Request) {
 		writeError(w, &global.GotrixError{Status: 0, Msg: fmt.Sprintf("%v", response)})
 	}
 }
+
+

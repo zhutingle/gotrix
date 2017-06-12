@@ -21,6 +21,8 @@ type Handler interface {
 	CheckPermission(userId int64, funcId int) (err *GotrixError)
 }
 
+var SessionMap map[string]interface{} = make(map[string]interface{})
+
 type Checker interface {
 	Check(r *http.Request, handler Handler) (checkedParams *CheckedParams, err *GotrixError)
 }
@@ -69,20 +71,38 @@ var INT_PARAM_ERROR *GotrixError = &GotrixError{Status: 2009, Msg: "参数[%s]�
 var BOOL_PARAM_ERROR *GotrixError = &GotrixError{Status: 2010, Msg: "参数[%s]是布尔型参数，请传入正确的参数值"}
 var JOB_FUNC_NOT_FOUND *GotrixError = &GotrixError{Status: 2011, Msg: "单一功能函数[%s]不存在，请联系开发人员检查配置文件"}
 var REDIS_HANDLE_JSON_ERROR *GotrixError = &GotrixError{Status: 2012, Msg: "redisHandle转换成JSON时出现异常"}
-var FUNC_JGET_NIL_ERROR *GotrixError = &GotrixError{Status: 2013, Msg: "Json->JSON为空"}
-var FUNC_JSET_NIL_ERROR *GotrixError = &GotrixError{Status: 2014, Msg: "Jset->JSON为空"}
-var SQLHANDLE_PREPARE_ERROR *GotrixError = &GotrixError{Status: 2015, Msg: "SqlHandle->准备SQL语句时出错"}
-var SQLHANDLE_EXECUTE_ERROR *GotrixError = &GotrixError{Status: 2016, Msg: "SqlHandle->执行SQL语句时出错"}
-var SQLHANDLE_QUERY_ERROR *GotrixError = &GotrixError{Status: 2017, Msg: "SqlHandle->查询时出错"}
-var SQLHANDLE_EXEC_ERROR *GotrixError = &GotrixError{Status: 2018, Msg: "SqlHandle->运行时出错"}
-var SQLHANDLE_COLUMNS_ERROR *GotrixError = &GotrixError{Status: 2019, Msg: "SqlHandle->读取列名称时出错"}
-var SQLHANDLE_SCAN_ERROR *GotrixError = &GotrixError{Status: 2020, Msg: "SqlHandle->读取行数据时出错"}
-var SQLHANDLE_CLOSE_ERROR *GotrixError = &GotrixError{Status: 2021, Msg: "SqlHandle->关闭行数据时出错"}
+
+// Jget 方法中可能出现的错误
+var FUNC_JGET_NIL_ERROR *GotrixError = &GotrixError{Status: 2101, Msg: "Jget->第 1 个参数为空"}
+var FUNC_JGET_PARAM_ERROR *GotrixError = &GotrixError{Status: 2102, Msg: "Jget->第 1 个参数的类型不为 map[string]interface{} "}
+
+// Jset
+var FUNC_JSET_NIL_ERROR *GotrixError = &GotrixError{Status: 2201, Msg: "Jset->JSON为空"}
+
+// SqlHandle
+var SQLHANDLE_PREPARE_ERROR *GotrixError = &GotrixError{Status: 2301, Msg: "SqlHandle->准备SQL语句时出错"}
+var SQLHANDLE_EXECUTE_ERROR *GotrixError = &GotrixError{Status: 2302, Msg: "SqlHandle->执行SQL语句时出错"}
+var SQLHANDLE_QUERY_ERROR *GotrixError = &GotrixError{Status: 2303, Msg: "SqlHandle->查询时出错"}
+var SQLHANDLE_EXEC_ERROR *GotrixError = &GotrixError{Status: 2304, Msg: "SqlHandle->运行时出错"}
+var SQLHANDLE_COLUMNS_ERROR *GotrixError = &GotrixError{Status: 2305, Msg: "SqlHandle->读取列名称时出错"}
+var SQLHANDLE_SCAN_ERROR *GotrixError = &GotrixError{Status: 2306, Msg: "SqlHandle->读取行数据时出错"}
+var SQLHANDLE_CLOSE_ERROR *GotrixError = &GotrixError{Status: 2307, Msg: "SqlHandle->关闭行数据时出错"}
+
+// UploadImg
+var UPLOADIMG_PARAM_NUMBER_ERROR *GotrixError = &GotrixError{Status:2401, Msg:"UploadImg->参数的个数为[2]"}
+var UPLOADIMG_PARAM_1_ERROR *GotrixError = &GotrixError{Status:2402, Msg:"UploadImg->参数1为空或不为[file]类型"}
+var UPLOADIMG_PARAM_2_ERROR *GotrixError = &GotrixError{Status:2403, Msg:"UploadImg->参数2为空或不为[string]类型"}
+var UPLOADIMG_CREATE_NEW_FILE_ERROR *GotrixError = &GotrixError{Status:2404, Msg:"UploadImg->创建新文件时出错"}
+var UPLOADIMG_COPY_FILE_ERROR *GotrixError = &GotrixError{Status:2405, Msg:"UploadImg->复制文件内容时出错"}
+var UPLOADIMG_OPEN_UPLOAD_FILE_ERROR *GotrixError = &GotrixError{Status:2406, Msg:"UploadImg->打开已上传文件时出错"}
+
 var ARRAY_PARAM_ERROR *GotrixError = &GotrixError{Status: 2022, Msg: "参数[%s]是数组类型参数，请传入正确的参数值"}
 var HTTPHANDLE_HTTP_GET_ERROR *GotrixError = &GotrixError{Status: 2050, Msg: "httpHandle->向url请求时出错"}
 var HTTPHANDLE_HTTP_READ_BODY *GotrixError = &GotrixError{Status: 2051, Msg: "httpHandle->读取url返回内容时出错"}
 var HTTPHANDLE_ANALYZE_ERROR *GotrixError = &GotrixError{Status: 2052, Msg: "httpHandle->解析返回内容时出错"}
 var JSON_TO_STRING_ERROR *GotrixError = &GotrixError{Status: 2060, Msg: "JsonToString->转换为json字符串时出错"}
 var STRING_TO_JSON_ERROR *GotrixError = &GotrixError{Status: 2061, Msg: "ToJson->转换为Json时出错"}
+
+var FROMXLS_OPEN_FILE_ERROR *GotrixError = &GotrixError{Status:2100, Msg:"FromXls->打开 xlsx 文件时出错"}
 
 var INTERNAL_ERROR *GotrixError = &GotrixError{Status: 9999, Msg: "内部错误"}

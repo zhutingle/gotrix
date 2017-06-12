@@ -89,6 +89,7 @@ var stringVaid = StringValid{}
 var intValid = IntValid{}
 var boolValid = BoolValid{}
 var arrayValid = ArrayValid{}
+var fileValid = FileValid{}
 
 func readXmlFolder(simpleHandler SimpleHandler, folder string) {
 
@@ -183,6 +184,9 @@ func dealWithParam(params []Param) []Param {
 		case "array":
 			params[i].Valid = arrayValid
 			break
+		case "file":
+			params[i].Valid = fileValid;
+			break;
 		default:
 			params = append(params[:i], params[i + 1:]...)
 			i--

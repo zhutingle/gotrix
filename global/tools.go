@@ -49,3 +49,28 @@ func ToInt64Must(v interface{}) int64 {
 	r, _ := ToInt64(v)
 	return r
 }
+
+func ToString(v interface{}) (string, error) {
+	zero := ""
+	switch v.(type) {
+	case string:
+		return v.(string), nil
+
+	case int, int8, int16, int32, int64:
+		return strconv.FormatInt(ToInt64Must(v), 10), nil
+
+	case uint, uint8, uint16, uint32, uint64:
+		return strconv.FormatInt(ToInt64Must(v), 10), nil
+
+	case float32, float64:
+		return strconv.FormatFloat(ToFloat64Must(v), 'g', 'e', 64), nil
+
+	default:
+		return zero, errors.New("tools:This type cannot convert to string.")
+	}
+}
+
+func ToStringMust(v interface{}) string {
+	r, _ := ToString(v)
+	return r
+}

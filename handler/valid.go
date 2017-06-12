@@ -20,6 +20,9 @@ type BoolValid struct {
 type ArrayValid struct {
 	ZERO []interface{}
 }
+type FileValid struct {
+	
+}
 
 func (this StringValid) Valid(param *Param, value interface{}) (v interface{}, gErr *global.GotrixError) {
 	if value == nil {
@@ -88,5 +91,10 @@ func (this ArrayValid) Valid(param *Param, value interface{}) (v interface{}, gE
 			return this.ZERO, global.NewGotrixError(global.PARAM_MUST_EXISTS, param.Name)
 		}
 	}
+	return value, nil
+}
+
+func (this FileValid) Valid(param *Param, value interface{}) (v interface{}, gErr *global.GotrixError) {
+
 	return value, nil
 }
