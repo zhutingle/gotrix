@@ -30,8 +30,9 @@ type Args struct {
 	ConfigFile string // 配置文件
 	Decrypt    bool   // 控制台参数 --decrypt
 	Console    bool   // 控制台参数 --console
-	Password   string // 控制台参数 --password {{password}}
 	Debug      bool
+
+	password   string // 控制台参数 --password {{password}} ，该参数不允许在配置文件中配置，否则容易被窃取
 }
 
 type Dir struct {
@@ -97,7 +98,7 @@ func InitArgs() {
 			Config.Args.Console = true
 			break
 		case "--password", "-p":
-			Config.Args.Password = args[i + 1]
+			Config.Args.password = args[i + 1]
 			break
 		default:
 			break
@@ -175,7 +176,21 @@ func InitConfiguration() {
 		Config.CMS.Static = path.Clean(Config.CMS.Base + Config.CMS.Static)
 		Config.CMS.Target = path.Clean(Config.CMS.Base + Config.CMS.Target)
 
-		InitArgs()
 	})
 
+}
+
+func StartProcess() {
+	filePath, _ := filepath.Abs(os.Args[0])
+	logFile, err := os.Create(Config.WEB.LogFile)
+	if err != nil {
+		panic(fmt.Sprintf("创建日志文件时出现异常：%v", err))
+	}
+	log.Println("日志文件创建成功：", Config.WEB.LogFile)
+
+	process, err := os.StartProcess(filePath, os.Args, &os.ProcAttr{Env: []string{"--console", "--password", Config.Args.password}, Files: []*os.File{logFile, logFile, logFile}})
+	if err != nil {
+		log.Println(err)
+	}
+	log.Println("新进程创建成功：", process)
 }

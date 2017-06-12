@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"runtime"
 	"strconv"
@@ -24,6 +23,7 @@ func GotrixServer() {
 	global.InitArgs()
 	global.InitPassword()
 	global.InitConfiguration()
+	global.InitArgs() // 命令行参数"强行覆盖"配置文件的[Args]参数
 
 	for _, args := range os.Args {
 		switch args {
@@ -31,18 +31,7 @@ func GotrixServer() {
 			if global.Config.Args.Console {
 				Server()
 			} else {
-				filePath, _ := filepath.Abs(os.Args[0])
-				logFile, err := os.Create(global.Config.WEB.LogFile)
-				if err != nil {
-					panic(fmt.Sprintf("创建日志文件时出现异常：%v", err))
-				}
-				log.Println("日志文件创建成功：", global.Config.WEB.LogFile)
-
-				process, err := os.StartProcess(filePath, os.Args, &os.ProcAttr{Env: []string{"--console", "--password", global.Config.Args.Password}, Files: []*os.File{logFile, logFile, logFile}})
-				if err != nil {
-					log.Println(err)
-				}
-				log.Println("新进程创建成功：", process)
+				global.StartProcess()
 			}
 			break
 		case "static":
@@ -178,7 +167,7 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 	logBuffer.WriteString("\n----Result: ")
 	logBuffer.Write(str)
 	logBuffer.WriteString("\n----Spend: ")
-	logBuffer.WriteString(strconv.FormatInt((time.Now().UnixNano() - start) / 1000000, 10))
+	logBuffer.WriteString(strconv.FormatInt((time.Now().UnixNano()-start)/1000000, 10))
 	logBuffer.WriteString(" ms")
 	logBuffer.WriteRune('\n')
 	log.Println(logBuffer.String())
@@ -200,5 +189,3 @@ func wxpayCallback(w http.ResponseWriter, r *http.Request) {
 		writeError(w, &global.GotrixError{Status: 0, Msg: fmt.Sprintf("%v", response)})
 	}
 }
-
-

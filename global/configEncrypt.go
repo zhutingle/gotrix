@@ -32,7 +32,7 @@ var ENCRYPT_PREFIX string = "GOTRIX_ENCRYPTED:"
  **/
 func InitPassword() {
 
-	if len(Config.Args.Password) > 0 {
+	if len(Config.Args.password) > 0 {
 		return
 	}
 
@@ -42,7 +42,7 @@ func InitPassword() {
 		if len(password) == 0 {
 			panic("密码不能为空，程序已退出，请重试。")
 		} else {
-			Config.Args.Password = password
+			Config.Args.password = password
 		}
 	} else {
 		log.Print("请设置您的密码（第一次输入）:")
@@ -55,7 +55,7 @@ func InitPassword() {
 		} else if len(password1) == 0 {
 			panic("密码不能为空，程序已退出，请重试。")
 		} else {
-			Config.Args.Password = password1
+			Config.Args.password = password1
 		}
 	}
 
@@ -110,7 +110,7 @@ func ReadConfigFile(filePath string, callback func([]byte, error)) ([]byte, erro
 
 		bs = bytes.Replace(bs, []byte(ENCRYPT_PREFIX), []byte(nil), -1)
 
-		decryptBs, err := AesDecrypt(bs, []byte(Config.Args.Password), 256)
+		decryptBs, err := AesDecrypt(bs, []byte(Config.Args.password), 256)
 		if err != nil {
 			return bs, err
 		}
@@ -141,7 +141,7 @@ func ReadConfigFile(filePath string, callback func([]byte, error)) ([]byte, erro
 		buf := bytes.NewBuffer(md5Bytes)
 		buf.Write(bs)
 
-		encryptBs, err := AesEncrypt(buf.Bytes(), []byte(Config.Args.Password), 256)
+		encryptBs, err := AesEncrypt(buf.Bytes(), []byte(Config.Args.password), 256)
 		if err != nil {
 			return bs, err
 		}
