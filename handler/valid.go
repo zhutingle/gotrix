@@ -9,7 +9,8 @@ type Valid interface {
 }
 
 type StringValid struct {
-	ZERO string
+	ZERO  string
+	valid string
 }
 type IntValid struct {
 	ZERO int64
@@ -21,7 +22,7 @@ type ArrayValid struct {
 	ZERO []interface{}
 }
 type FileValid struct {
-	
+
 }
 
 func (this StringValid) Valid(param *Param, value interface{}) (v interface{}, gErr *global.GotrixError) {

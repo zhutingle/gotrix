@@ -10,12 +10,12 @@ import (
 	"github.com/zhutingle/gotrix/weichat"
 	"log"
 	"net/http"
-	"os"
 	"os/exec"
 	"regexp"
 	"runtime"
 	"strconv"
 	"time"
+	"os"
 )
 
 func GotrixServer() {
@@ -167,7 +167,7 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 	logBuffer.WriteString("\n----Result: ")
 	logBuffer.Write(str)
 	logBuffer.WriteString("\n----Spend: ")
-	logBuffer.WriteString(strconv.FormatInt((time.Now().UnixNano()-start)/1000000, 10))
+	logBuffer.WriteString(strconv.FormatInt((time.Now().UnixNano() - start) / 1000000, 10))
 	logBuffer.WriteString(" ms")
 	logBuffer.WriteRune('\n')
 	log.Println(logBuffer.String())

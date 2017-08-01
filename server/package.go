@@ -175,7 +175,7 @@ func packageTarget(staticDir string, targetDir string) {
 
 	// 将各 html 文件按模版文件进行输出
 	for shortPath, bs := range htmlFiles {
-		htmlFiles[shortPath] = parseHtml(bs, func(modelName string) ([]byte, error) {
+		htmlFiles[shortPath] = parseHtml(shortPath, bs, func(modelName string) ([]byte, error) {
 			return modelFiles[modelName], nil
 		})
 	}
@@ -239,7 +239,7 @@ func writeToFile(path string, bs []byte) {
 	}
 }
 
-func parseHtml(content []byte, getModel func(modelName string) ([]byte, error)) []byte {
+func parseHtml(fileName string, content []byte, getModel func(modelName string) ([]byte, error)) []byte {
 	p, err := goquery.ParseString(string(content))
 	if err != nil {
 		log.Println("解析Html文件时出现异常:", err)
@@ -256,12 +256,12 @@ func parseHtml(content []byte, getModel func(modelName string) ([]byte, error)) 
 	html["style"] = regexp.MustCompile("&gt;").ReplaceAllString(html["style"], ">")
 
 	if len(html["model"]) == 0 {
-		log.Println("未指定模板文件")
+		log.Println("解析[", fileName, "]时，未指定模板文件。")
 		return content
 	}
 	modelContent, err := getModel(html["model"])
 	if err != nil {
-		log.Println("获取模板内容时出现异常：", err)
+		log.Println("解析[", fileName, "]时，获取模板[", html["model"], "]时出现异常：", err)
 		return content
 	}
 
@@ -272,9 +272,9 @@ func parseHtml(content []byte, getModel func(modelName string) ([]byte, error)) 
 	return newContent
 }
 
-func parseHtmlFromFile(content []byte, dir string) []byte {
+func parseHtmlFromFile(fileName string, content []byte, dir string) []byte {
 
-	return parseHtml(content, func(modelName string) ([]byte, error) {
+	return parseHtml(fileName, content, func(modelName string) ([]byte, error) {
 
 		model, err := os.Open(filepath.Join(dir, filepath.FromSlash(path.Clean("/" + modelName))))
 		if err != nil {
@@ -306,7 +306,7 @@ func parseFromB64(fileName string) []byte {
 	}
 
 	if strings.HasSuffix(fileName, "html") {
-		return parseHtml(bs, func(ModelName string) ([]byte, error) {
+		return parseHtml(fileName, bs, func(ModelName string) ([]byte, error) {
 			return b64.DecodeString(StaticResource[ModelName])
 		})
 	}

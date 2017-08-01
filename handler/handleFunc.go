@@ -285,11 +285,26 @@ func (this *handleFunc) initRand() {
 		length := args[0].(int64)
 
 		str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-		bytes := []byte(str)
+		bts := []byte(str)
 		result := []byte{}
 		r := rand.New(rand.NewSource(time.Now().UnixNano()))
 		for i := int64(0); i < length; i++ {
-			result = append(result, bytes[r.Intn(len(bytes))])
+			result = append(result, bts[r.Intn(len(bts))])
+		}
+		response = string(result)
+		return
+	}
+	// Rint(int64)
+	// 随机生成一个第一个参数所示长度的验证码
+	this.methodMap["Rint"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		length := args[0].(int64)
+
+		str := "0123456789"
+		bts := []byte(str)
+		result := []byte{}
+		r := rand.New(rand.NewSource(time.Now().UnixNano()))
+		for i := int64(0); i < length; i++ {
+			result = append(result, bts[r.Intn(len(bts))])
 		}
 		response = string(result)
 		return

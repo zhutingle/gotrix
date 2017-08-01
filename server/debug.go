@@ -87,7 +87,7 @@ func (f *DevFile) Stat() (os.FileInfo, error) {
 	return f, nil
 }
 func (f *DevFile) Name() string {
-	if f.fileInfo != nil {
+	if f != nil && f.fileInfo != nil {
 		return f.fileInfo.Name()
 	} else {
 		return f.fileName
@@ -97,14 +97,14 @@ func (f *DevFile) Size() int64 {
 	return int64(len(f.bs))
 }
 func (f *DevFile) Mode() os.FileMode {
-	if f.fileInfo != nil {
+	if f != nil && f.fileInfo != nil {
 		return f.fileInfo.Mode()
 	} else {
 		return os.ModePerm
 	}
 }
 func (f *DevFile) ModTime() time.Time {
-	if f.fileInfo != nil {
+	if f != nil && f.fileInfo != nil {
 		return f.fileInfo.ModTime()
 	} else {
 		return time.Now()
@@ -114,12 +114,12 @@ func (f *DevFile) IsDir() bool {
 	if f != nil && f.fileInfo != nil {
 		return f.fileInfo.IsDir()
 	} else {
-		return false;
+		return false
 	}
 
 }
 func (f *DevFile) Sys() interface{} {
-	if f.fileInfo != nil {
+	if f != nil && f.fileInfo != nil {
 		return f.fileInfo.Sys()
 	} else {
 		return nil
@@ -138,7 +138,7 @@ func newDevFile(f http.File, dir string) *DevFile {
 	}
 
 	if strings.HasSuffix(fileInfo.Name(), "html") {
-		return &DevFile{file: f, fileInfo: fileInfo, bs: parseHtmlFromFile(bs, dir), cur: 0}
+		return &DevFile{file: f, fileInfo: fileInfo, bs: parseHtmlFromFile(fileInfo.Name(), bs, dir), cur: 0}
 	} else {
 		return &DevFile{file: f, fileInfo: fileInfo, bs: bs, cur: 0}
 	}
@@ -149,5 +149,5 @@ func newDevFileWithString(fileName string) *DevFile {
 	if bs == nil {
 		return nil
 	}
-	return &DevFile{bs: bs, cur: 0, fileName:fileName}
+	return &DevFile{bs: bs, cur: 0, fileName: fileName}
 }

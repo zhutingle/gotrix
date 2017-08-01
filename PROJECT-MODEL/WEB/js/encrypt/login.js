@@ -365,7 +365,7 @@
                 if (d.status === 0) {
                     console.info(d);
                     successFunc(d);
-                } else if (d.status === 1000) { // 用户 Session 已过期
+                } else if (d.status === 1000 && d.msg && d.msg.indexOf('用户会话已过期') === 0) { // 用户 Session 已过期
                     console.error(d);
                     global.noSession(reqParams);
                 } else {

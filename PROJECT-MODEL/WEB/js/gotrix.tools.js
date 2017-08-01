@@ -111,68 +111,6 @@
     }
 
     /**
-     * 对 Html5Plus 进行一个处理与封装
-     */
-    // P.ready = (function() {
-    // function shield() {
-    // return false;
-    // }
-    // // 取消浏览器的所有事件，使得active的样式在手机上正常生效
-    // document.addEventListener("touchstart", shield, false);
-    // // 屏蔽选择函数
-    // // document.oncontextmenu = shield;
-    // // H5 plus事件处理
-    // document.addEventListener("plusready", function() {
-    // gInit();
-    // // document.body.onselectstart = shield;
-    // // Android处理返回键
-    // // plus.ui.getSelfWindow().addEventListener("back", function() {
-    // // back();
-    // // }, false);
-    // }, false);
-    // // 兼容非H5 plus终端
-    // if (navigator.userAgent.indexOf("Html5Plus") < 0) {
-    // document.addEventListener("DOMContentLoaded", function() {
-    // gInit();
-    // document.body.onselectstart = shield;
-    // }, false);
-    // }
-    // // 处理返回事件
-    // function back() {
-    // if (window.plus) {
-    // plus.ui.getSelfWindow().close();
-    // } else if (history.length > 1) {
-    // history.back();
-    // } else {
-    // window.close();
-    // }
-    // }
-    // // 处理点击事件
-    // function clicked(id) {
-    // if (window.plus) {
-    // var pre = "";// "http://192.168.1.178:8080/h5/";
-    // plus.ui.createWindow(pre + id, {
-    // name : id,
-    // scalable : false
-    // }).show("slide-in-right", 300);
-    // } else {
-    // window.open(id);
-    // }
-    // }
-    // // 通用元素对象
-    // var readyFuncs = [];
-    // function gInit() {
-    // for (var i = 0, len = readyFuncs.length; i < len; i++) {
-    // readyFuncs[i]();
-    // }
-    // }
-    // return function(readyFunc) {
-    // if (typeof readyFunc == 'function') {
-    // readyFuncs.push(readyFunc);
-    // }
-    // }
-    // })();
-    /**
      * 图片修复
      */
     w.imgSizer = {
