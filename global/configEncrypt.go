@@ -22,7 +22,7 @@ void show() {
 }
 
 */
-import "C"
+//import "C"
 
 // 加密字符串的前缀
 var ENCRYPT_PREFIX string = "GOTRIX_ENCRYPTED:"
@@ -67,8 +67,8 @@ func InitPassword() {
 func readPassword() string {
 	//exec.Command("stty", "/echo").Run()
 	//defer exec.Command("stty", "echo").Run()
-	C.hide()
-	defer C.show()
+	//C.hide()
+	//defer C.show()
 
 	var password string
 	var b []byte = make([]byte, 1)
