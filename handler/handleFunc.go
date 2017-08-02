@@ -444,8 +444,8 @@ func (this *handleFunc) initXlsx() {
 
 		if maxRow > 0 {
 			for j := 0; j < maxCol; j++ {
-				//str, err := f.Sheets[0].Rows[0].Cells[j].String()
-				str := f.Sheets[0].Rows[0].Cells[j].String()
+				str, err := f.Sheets[0].Rows[0].Cells[j].String()
+				// str := f.Sheets[0].Rows[0].Cells[j].String()
 				if err != nil {
 					log.Print(err)
 					colNames = append(colNames, strconv.FormatInt(int64(j), 10))
@@ -458,8 +458,8 @@ func (this *handleFunc) initXlsx() {
 		for i := 1; i < maxRow; i++ {
 			row := make(map[string]interface{})
 			for j := 0; j < maxCol; j++ {
-				//str, err := f.Sheets[0].Rows[i].Cells[j].String()
-				str := f.Sheets[0].Rows[i].Cells[j].String()
+				str, err := f.Sheets[0].Rows[i].Cells[j].String()
+				// str := f.Sheets[0].Rows[i].Cells[j].String()
 				if err != nil {
 					log.Println(err)
 					row[colNames[j]] = ""
