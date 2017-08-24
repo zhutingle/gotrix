@@ -2,7 +2,7 @@
 *:not(input,textarea) {-webkit-touch-callout: inherit;-webkit-user-select: auto;}
 body {width: 100%;font-family: "微软雅黑","凯体",Hiragino Sans GB,Arial,Helvetica,sans-serif;color: #878787;-webkit-touch-callout: inherit ;-webkit-user-select: auto ;background: transparent;}
 a {color: #878787;text-decoration: none;-webkit-tap-highlight-color: rgba(0, 0, 0, 0);}
-button,input,select,textarea {resize: none;outline: none;-webkit-appearance: none;}
+button,input,select,textarea {resize: none;outline: none;}
 
 .left {float:left;}
 .right {float:right;}
