@@ -114,7 +114,7 @@
             alert_content = document.createElement('div');
             alert_content.id = 'alert_content';
             alert_content.setAttribute('style', 'position: fixed;width: 100%;height: 100%;top: 0;left: 0;text-align: center;z-index: 9999;');
-            alert_content.innerHTML = '<div style="position: absolute;width: 6rem;left: 50%;bottom: 3rem;margin: 0 0 0 -3.5rem;display: block;line-height: 0.6rem;font-size: 0.5rem;background: rgba(219, 87, 51, 1);padding: 0.5rem;font-weight: 700;border-radius: 0.5rem;color: white;box-shadow: 0px 9px 0px rgba(219, 31, 5, 1), 0px 9px 25px rgba(0, 0, 0, .7);"></div>';
+            alert_content.innerHTML = '<div style="position: absolute;width: 60%;left: 20%;bottom: 10%;display: block;line-height: 150%;font-size: 1rem;background: rgba(0, 0, 0, 0.6);padding: 0.5rem;font-weight: 700;border-radius: 0.5rem;color: white;box-shadow: 0px 9px 0px rgba(0, 0, 0, 0.6), 0px 9px 25px rgba(0, 0, 0, 0.6);"></div>';
             document.body.appendChild(alert_content);
         }
         alert_content.style.display = 'block';

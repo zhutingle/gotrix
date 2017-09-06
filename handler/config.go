@@ -19,11 +19,6 @@ var sqlArgsReg *regexp.Regexp = regexp.MustCompile("\\$\\{\\w+\\}")
 var autoTagReg *regexp.Regexp = regexp.MustCompile("<auto>(.*?)</auto>")
 var autoTagItemReg *regexp.Regexp = regexp.MustCompile("\\w+\\s*=\\s*\\$\\{\\w+\\}\\s*(?:,|$|(and))\\s*")
 
-var pHandleHttp Handle
-var pHandleFunc Handle
-var pHandleRedis Handle
-var pHandleSql Handle
-
 type Result struct {
 	Sql  []Sql  `xml:"sql"`
 	Func []Func `xml:"func"`
@@ -80,33 +75,22 @@ type Param struct {
 	must    bool
 }
 
-var funcMap map[int]*Func
-var funcNameMap map[string]*Func
-var sqlMap map[int]*Sql
-var pageMap map[int]*Page
-
-var stringVaid = StringValid{}
-var intValid = IntValid{}
-var boolValid = BoolValid{}
-var arrayValid = ArrayValid{}
-var fileValid = FileValid{}
-
-func readXmlFolder(simpleHandler SimpleHandler, folder string) {
-
-	pHandleHttp = &handleHttp{}
-	pHandleFunc = (&handleFunc{simpleHandler: simpleHandler}).init()
-	pHandleRedis = (&handleRedis{}).init()
-	pHandleSql = (&handleSql{}).init()
-
-	funcMap = make(map[int]*Func)
-	funcNameMap = make(map[string]*Func)
-	sqlMap = make(map[int]*Sql)
-	pageMap = make(map[int]*Page)
+func readXmlBytes(content []byte) {
 
 	var result Result
 
-	//_, filename, _, _ := runtime.Caller(1)
-	//baseDir := regexp.MustCompile("src.*$").ReplaceAllString(filename, "")
+	err := xml.Unmarshal(content, &result)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+
+	dealWithResult(&result)
+}
+
+func readXmlFolder(folder string) {
+
+	var result Result
 
 	// 对文件夹进行遍历，读取所有XML文件
 	filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
@@ -121,6 +105,11 @@ func readXmlFolder(simpleHandler SimpleHandler, folder string) {
 		}
 		return nil
 	})
+
+	dealWithResult(&result)
+}
+
+func dealWithResult(result *Result) {
 
 	dealWithFuncs(result.Func)
 
@@ -142,7 +131,6 @@ func readXmlFolder(simpleHandler SimpleHandler, folder string) {
 		dealWithFuncs(v.Select)
 
 	}
-
 }
 
 func dealWithFuncs(funcs []Func) {
@@ -185,10 +173,10 @@ func dealWithParam(params []Param) []Param {
 			params[i].Valid = arrayValid
 			break
 		case "file":
-			params[i].Valid = fileValid;
-			break;
+			params[i].Valid = fileValid
+			break
 		default:
-			params = append(params[:i], params[i + 1:]...)
+			params = append(params[:i], params[i+1:]...)
 			i--
 			break
 		}

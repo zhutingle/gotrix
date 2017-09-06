@@ -52,7 +52,7 @@ func packageToGotrix(staticDir string, fileName string) {
 
 	buffer.Write([]byte("}\n"))
 
-	writeToFile(path.Clean(staticDir + "/../../server/" + fileName), buffer.Bytes())
+	writeToFile(path.Clean(staticDir+"/../../server/"+fileName), buffer.Bytes())
 
 }
 
@@ -68,8 +68,7 @@ func packageTarget(staticDir string, targetDir string) {
 	var jsFiles map[string][]byte = make(map[string][]byte)
 	var imgFiles map[string][]byte = make(map[string][]byte)
 	var imgCacheFiles map[string][]byte = make(map[string][]byte)
-	var ttfFiles map[string][]byte = make(map[string][]byte);
-
+	var ttfFiles map[string][]byte = make(map[string][]byte)
 	var err error
 	// 从代码中读取静态资源文件
 	for shortPath, fileContentB64 := range StaticResource {
@@ -86,8 +85,8 @@ func packageTarget(staticDir string, targetDir string) {
 			jsFiles[shortPath], err = b64.DecodeString(fileContentB64)
 		} else if strings.HasSuffix(shortPath, ".png") || strings.HasSuffix(shortPath, ".jpg") || strings.HasSuffix(shortPath, ".jpeg") || strings.HasSuffix(shortPath, ".gif") {
 			imgFiles[shortPath], err = b64.DecodeString(fileContentB64)
-		} else if (strings.HasSuffix(shortPath, ".ttf")) {
-			ttfFiles[shortPath], err = b64.DecodeString(fileContentB64);
+		} else if strings.HasSuffix(shortPath, ".ttf") {
+			ttfFiles[shortPath], err = b64.DecodeString(fileContentB64)
 		}
 		if err != nil {
 			log.Println("解码静态资源文件[", shortPath, "]时出错：", err)
@@ -131,7 +130,7 @@ func packageTarget(staticDir string, targetDir string) {
 
 	// 对 img 文件进行 base64 处理，并在文件名后面加上 .cache
 	for shortPath, bs := range imgFiles {
-		imgCacheFiles[shortPath + ".cache"] = []byte(b64.EncodeToString(bs))
+		imgCacheFiles[shortPath+".cache"] = []byte(b64.EncodeToString(bs))
 	}
 
 	// 对各 html、js 文件进行 onload 替换处理
@@ -141,7 +140,7 @@ func packageTarget(staticDir string, targetDir string) {
 			files[shortPath] = onloadReg.ReplaceAllFunc(bs, func(match []byte) []byte {
 				subMatch := onloadReg.FindSubmatch(match)[1]
 				if bytes.HasSuffix(match, []byte("/>")) {
-					return bytes.Replace(match, subMatch, []byte("data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==\" cache=\"" + string(subMatch) + "\" onload=\"javascript:P.img(this);"), -1)
+					return bytes.Replace(match, subMatch, []byte("data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==\" cache=\""+string(subMatch)+"\" onload=\"javascript:P.img(this);"), -1)
 				} else {
 					imgCacheFiles[string(subMatch)] = imgFiles[string(subMatch)]
 					return match
@@ -183,14 +182,14 @@ func packageTarget(staticDir string, targetDir string) {
 	// 写入各文件至输出文件夹
 	for _, files := range []map[string][]byte{htmlFiles, jsFiles, cssFiles, imgCacheFiles, ttfFiles} {
 		for shortPath, bs := range files {
-			writeToFile(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/" + shortPath))), bs)
+			writeToFile(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/"+shortPath))), bs)
 		}
 	}
 }
 
 func createMd5String(md5Map map[string]string) []byte {
 	var md5KeySort []string = make([]string, 0)
-	for key, _ := range md5Map {
+	for key := range md5Map {
 		md5KeySort = append(md5KeySort, key)
 	}
 	sort.Strings(md5KeySort)
@@ -240,6 +239,16 @@ func writeToFile(path string, bs []byte) {
 }
 
 func parseHtml(fileName string, content []byte, getModel func(modelName string) ([]byte, error)) []byte {
+
+	content = regexp.MustCompile("<func[\\w\\W]*?</func>").ReplaceAllFunc(content, func(match []byte) []byte {
+		bs := bytes.NewBuffer([]byte(""))
+		bs.WriteString("<?xml version=\"1.0\" encoding=\"UTF-8\" ?><funcs>")
+		bs.Write(match)
+		bs.WriteString("</funcs>")
+		gotrixHandler.ReadXmlBytes(bs.Bytes())
+		return []byte("")
+	})
+
 	p, err := goquery.ParseString(string(content))
 	if err != nil {
 		log.Println("解析Html文件时出现异常:", err)
@@ -254,7 +263,6 @@ func parseHtml(fileName string, content []byte, getModel func(modelName string) 
 	html["body"] = p.Find("body").Html()
 
 	html["style"] = regexp.MustCompile("&gt;").ReplaceAllString(html["style"], ">")
-
 	if len(html["model"]) == 0 {
 		log.Println("解析[", fileName, "]时，未指定模板文件。")
 		return content
@@ -266,7 +274,7 @@ func parseHtml(fileName string, content []byte, getModel func(modelName string) 
 	}
 
 	newContent := regexp.MustCompile("\\$\\{\\w*\\}").ReplaceAllFunc(modelContent, func(bs []byte) []byte {
-		return []byte(html[string(bs[2:len(bs) - 1])])
+		return []byte(html[string(bs[2:len(bs)-1])])
 	})
 
 	return newContent
@@ -276,10 +284,11 @@ func parseHtmlFromFile(fileName string, content []byte, dir string) []byte {
 
 	return parseHtml(fileName, content, func(modelName string) ([]byte, error) {
 
-		model, err := os.Open(filepath.Join(dir, filepath.FromSlash(path.Clean("/" + modelName))))
+		model, err := os.Open(filepath.Join(dir, filepath.FromSlash(path.Clean("/"+modelName))))
 		if err != nil {
-			if (StaticResource[modelName] != "") {
-				return b64.DecodeString(StaticResource[modelName])
+			fileResource := StaticResource[modelName]
+			if fileResource != "" {
+				return b64.DecodeString(fileResource)
 			}
 			log.Println("打开模版文件[", modelName, "]时出现异常：", err)
 			return []byte(""), nil

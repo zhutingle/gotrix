@@ -18,17 +18,56 @@ type Handle interface {
 	handle(job *Job, cp *global.CheckedParams) (result interface{}, gErr *global.GotrixError)
 }
 
+var pHandleHttp Handle
+var pHandleFunc Handle
+var pHandleRedis Handle
+var pHandleSql Handle
+
+var funcMap map[int]*Func
+var funcNameMap map[string]*Func
+var sqlMap map[int]*Sql
+var pageMap map[int]*Page
+
+var stringVaid = StringValid{}
+var intValid = IntValid{}
+var boolValid = BoolValid{}
+var arrayValid = ArrayValid{}
+var fileValid = FileValid{}
+
 func (this SimpleHandler) Init() {
 
-	readXmlFolder(this, global.Config.WEB.Func)
+	pHandleHttp = &handleHttp{}
+	pHandleFunc = (&handleFunc{simpleHandler: this}).init()
+	pHandleRedis = (&handleRedis{}).init()
+	pHandleSql = (&handleSql{}).init()
+
+	funcMap = make(map[int]*Func)
+	funcNameMap = make(map[string]*Func)
+	sqlMap = make(map[int]*Sql)
+	pageMap = make(map[int]*Page)
+
+	readXmlFolder(global.Config.WEB.Func)
 
 	this.cronTask()
 
 }
 
+func (this SimpleHandler) ReadXmlFolder(folder string) {
+	readXmlFolder(folder)
+}
+
+func (this SimpleHandler) ReadXmlBytes(content []byte) {
+	readXmlBytes(content)
+}
+
 func (this SimpleHandler) Handle(checkedParams *global.CheckedParams) (response interface{}, gErr *global.GotrixError) {
 	// 1、从配置文件中取某个功能号对应的配置
-	var handleFunc *Func = funcMap[checkedParams.Func]
+	var handleFunc *Func
+	if checkedParams.Name != "" {
+		handleFunc = funcNameMap[checkedParams.Name]
+	} else {
+		handleFunc = funcMap[checkedParams.Func]
+	}
 	if handleFunc == nil {
 		gErr = global.NewGotrixError(global.FUNC_NOT_EXISTS, checkedParams.Func)
 		return
@@ -81,7 +120,7 @@ func (this SimpleHandler) jobHandle(handleFunc *Func, checkedParams *global.Chec
 		}
 
 		if len(job.Result) == 0 {
-			checkedParams.V[strconv.Itoa(i + 1)] = response
+			checkedParams.V[strconv.Itoa(i+1)] = response
 		} else {
 			checkedParams.V[job.Result] = response
 		}

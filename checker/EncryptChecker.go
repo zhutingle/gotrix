@@ -163,6 +163,16 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 		checkedParams.V["IP"] = r.Header.Get("X-Forward-For")
 		gErr = handler.CheckPermission(userId, checkedParams.Func)
 		break
+	case string:
+		checkedParams.Name = fun.(string)
+		checkedParams.Pass = pass
+		checkedParams.Checked = true
+		checkedParams.Self = self
+		checkedParams.V["ID"] = userId
+		checkedParams.V["TOKEN"] = string(b[:i])
+		checkedParams.V["IP"] = r.Header.Get("X-Forward-For")
+		gErr = handler.CheckPermission(userId, checkedParams.Func)
+		break
 	default:
 		gErr = global.FUNC_PARAM_ERROR
 		break

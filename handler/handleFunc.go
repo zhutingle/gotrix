@@ -31,7 +31,7 @@ import (
 
 type handleFunc struct {
 	simpleHandler SimpleHandler
-	methodMap map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
+	methodMap     map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
 }
 
 func (this *handleFunc) handle(job *Job, cp *global.CheckedParams) (result interface{}, gErr *global.GotrixError) {
