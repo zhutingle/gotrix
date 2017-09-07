@@ -186,7 +186,7 @@ func dealWithParam(params []Param) []Param {
 
 func dealWithJob(jobs []Job) {
 	// 去掉Job的<![CDATA[]]>标签
-	cdataExp := regexp.MustCompile("^<!\\[CDATA\\[([\\w\\W]*?)\\]\\]>$")
+	cdataExp := regexp.MustCompile("^\\s*<!\\[CDATA\\[([\\w\\W]*?)\\]\\]>\\s*$")
 	autoExp := regexp.MustCompile("<auto>.*?</auto>")
 	for j := 0; j < len(jobs); j++ {
 		flag := cdataExp.MatchString(jobs[j].Job)

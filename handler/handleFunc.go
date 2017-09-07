@@ -19,11 +19,13 @@ import (
 	"github.com/zhutingle/gotrix/global"
 	"github.com/zhutingle/gotrix/weichat"
 
+	"github.com/axgle/mahonia"
 	"github.com/scorredoira/email"
 	"github.com/tealeg/xlsx"
 	"io"
 	"log"
 	"mime/multipart"
+	"net/url"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -31,7 +33,7 @@ import (
 
 type handleFunc struct {
 	simpleHandler SimpleHandler
-	methodMap     map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
+	methodMap map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
 }
 
 func (this *handleFunc) handle(job *Job, cp *global.CheckedParams) (result interface{}, gErr *global.GotrixError) {
@@ -599,10 +601,23 @@ func (this *handleFunc) initEmail() {
  * 定义所有 Http 相关的扩展方法
  */
 func (this *handleFunc) initHttp() {
-	this.methodMap["HttpGet"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
-		url := args[0].(string)
 
-		resp, e := http.Get(url)
+	this.methodMap["ConvertString"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		str := args[0].(string)
+		enc := mahonia.NewEncoder("GB18030")
+		str = enc.ConvertString(str)
+		return str, nil
+	}
+
+	this.methodMap["QueryEscape"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		str := args[0].(string)
+		us, _ := url.Parse(str)
+		return us.Scheme + "://" + us.Host + us.Path + "?" + us.Query().Encode(), nil
+	}
+	this.methodMap["HttpGet"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		requestUrl := args[0].(string)
+
+		resp, e := http.Get(requestUrl)
 		if e != nil {
 			fmt.Println(e)
 			gErr = global.HTTPHANDLE_HTTP_GET_ERROR
