@@ -6,7 +6,6 @@ import (
 )
 
 type CheckedParams struct {
-	Func    int
 	Name    string
 	Checked bool
 	Self    bool

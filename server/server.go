@@ -130,7 +130,7 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logBuffer.WriteString("\n----Func: ")
-	logBuffer.WriteString(strconv.FormatInt(int64(checkedParams.Func), 10))
+	logBuffer.WriteString(checkedParams.Name)
 	logBuffer.WriteString("\n----Param: ")
 	logBuffer.WriteString(fmt.Sprint(checkedParams.V))
 
@@ -175,7 +175,7 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func wxpayCallback(w http.ResponseWriter, r *http.Request) {
-	checkedParams := &global.CheckedParams{Func: 1001, V: make(map[string]interface{}, 0)}
+	checkedParams := &global.CheckedParams{Name: "wxpayCallback", V: make(map[string]interface{}, 0)}
 	weichat, err := weichat.WxpayCallback(w, r)
 	if err != nil {
 		fmt.Println(err)

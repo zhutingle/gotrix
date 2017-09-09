@@ -153,16 +153,6 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 	}
 
 	switch fun.(type) {
-	case float64:
-		checkedParams.Func = int(checkedParams.V["func"].(float64))
-		checkedParams.Pass = pass
-		checkedParams.Checked = true
-		checkedParams.Self = self
-		checkedParams.V["ID"] = userId
-		checkedParams.V["TOKEN"] = string(b[:i])
-		checkedParams.V["IP"] = r.Header.Get("X-Forward-For")
-		gErr = handler.CheckPermission(userId, checkedParams.Func)
-		break
 	case string:
 		checkedParams.Name = fun.(string)
 		checkedParams.Pass = pass
@@ -171,7 +161,7 @@ func (checker EncryptChecker) Check(r *http.Request, handler global.Handler) (ch
 		checkedParams.V["ID"] = userId
 		checkedParams.V["TOKEN"] = string(b[:i])
 		checkedParams.V["IP"] = r.Header.Get("X-Forward-For")
-		gErr = handler.CheckPermission(userId, checkedParams.Func)
+		//gErr = handler.CheckPermission(userId, checkedParams.Name)
 		break
 	default:
 		gErr = global.FUNC_PARAM_ERROR

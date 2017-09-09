@@ -443,7 +443,7 @@
         var aesPassword = dcodeIO.bcrypt.hashSync(password, bcryptSalt).replace(bcryptSalt, "");
 
         P.req({
-            func: 10,
+            func: 'GetSalt',
             TOKEN: token
         }, getSession, error, {
             aesPass: aesPassword
@@ -456,7 +456,7 @@
             var rand = P.rand();
             var S = P.secretKey(rand);
             P.req({
-                func: 11,
+                func: 'LoginIn',
                 TOKEN: token,
                 x: S.getX().toBigInteger().toString(16),
                 y: S.getY().toBigInteger().toString(16)

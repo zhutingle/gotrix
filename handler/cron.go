@@ -17,7 +17,7 @@ func (this CronTask) Run() {
 	startUnix := time.Now().Unix()
 	log.Printf("定时任务[%d-%s]开始启动...\n", this.fun.Id, this.fun.Des)
 
-	checkedParams := &global.CheckedParams{Func: this.fun.Id, V: make(map[string]interface{})}
+	checkedParams := &global.CheckedParams{Name: this.fun.Name, V: make(map[string]interface{})}
 	response, err := this.handler.Handle(checkedParams)
 	if err != nil {
 		log.Printf("定时任务[%d-%s]执行时出现异常：%v\n", this.fun.Id, this.fun.Des, err)
@@ -35,7 +35,7 @@ func (this SimpleHandler) cronTask() {
 		this.cronManager = cron.New()
 	}
 	// 遍历所有 Func 对象，取出所有配置有 cron 属性的 Func 对象，并将它加入定时任务
-	for _, d := range funcMap {
+	for _, d := range funcNameMap {
 		if len(d.Cron) > 0 {
 			this.cronManager.AddJob(d.Cron, &CronTask{fun: d, handler: this})
 		}

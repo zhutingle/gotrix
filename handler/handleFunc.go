@@ -33,7 +33,8 @@ import (
 
 type handleFunc struct {
 	simpleHandler SimpleHandler
-	methodMap map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
+	methodMap     map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
+	methodMapJob  map[string]func(job *Job, cp *global.CheckedParams, args []interface{}) (response interface{}, gErr *global.GotrixError)
 }
 
 func (this *handleFunc) handle(job *Job, cp *global.CheckedParams) (result interface{}, gErr *global.GotrixError) {
@@ -73,18 +74,25 @@ func (this *handleFunc) handle(job *Job, cp *global.CheckedParams) (result inter
 		}
 	}
 
-	if this.methodMap[funcName] == nil {
-		gErr = global.NewGotrixError(global.JOB_FUNC_NOT_FOUND, funcName)
+	if this.methodMap[funcName] != nil {
+		result, gErr = this.methodMap[funcName](args)
 		return
 	}
-	result, gErr = this.methodMap[funcName](args)
 
+	if this.methodMapJob[funcName] != nil {
+		result, gErr = this.methodMapJob[funcName](job, cp, args)
+		return
+	}
+
+	gErr = global.NewGotrixError(global.JOB_FUNC_NOT_FOUND, funcName)
 	return
+
 }
 
 func (this *handleFunc) init() *handleFunc {
 
 	this.methodMap = make(map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError))
+	this.methodMapJob = make(map[string]func(job *Job, cp *global.CheckedParams, args []interface{}) (response interface{}, gErr *global.GotrixError))
 
 	this.initJson()
 	this.initTime()
@@ -232,10 +240,12 @@ func (this *handleFunc) initJudge() {
 	// Eq(interface{},interface{},string)
 	// 第一个参数等于第二个参数时抛出异常
 	// 第三个参数不为空时抛出第三个参数所示文字的异常，为空时抛出内部异常
-	this.methodMap["Eq"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	this.methodMapJob["Eq"] = func(job *Job, cp *global.CheckedParams, args []interface{}) (response interface{}, gErr *global.GotrixError) {
 		if args[0] == args[1] {
 			if len(args) >= 3 {
 				gErr = global.NewGotrixError(global.BLANK_ERROR, args[2])
+			} else if len(job.Jobs) > 0 {
+				this.simpleHandler.jobHandle(job.Jobs, cp)
 			} else {
 				gErr = global.INTERNAL_ERROR
 			}
@@ -245,30 +255,36 @@ func (this *handleFunc) initJudge() {
 	// Eq(interface{},interface{},string)
 	// 第一个参数不等于第二个参数时抛出异常
 	// 第三个参数不为空时抛出第三个参数所示文字的异常，为空时抛出内部异常
-	this.methodMap["Neq"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	this.methodMapJob["Neq"] = func(job *Job, cp *global.CheckedParams, args []interface{}) (response interface{}, gErr *global.GotrixError) {
 		if args[0] != args[1] {
 			if len(args) >= 3 {
 				gErr = global.NewGotrixError(global.BLANK_ERROR, args[2])
+			} else if len(job.Jobs) > 0 {
+				this.simpleHandler.jobHandle(job.Jobs, cp)
 			} else {
 				gErr = global.INTERNAL_ERROR
 			}
 		}
 		return
 	}
-	this.methodMap["G"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	this.methodMapJob["G"] = func(job *Job, cp *global.CheckedParams, args []interface{}) (response interface{}, gErr *global.GotrixError) {
 		if global.ToFloat64Must(args[0]) > global.ToFloat64Must(args[1]) {
 			if len(args) >= 3 {
 				gErr = global.NewGotrixError(global.BLANK_ERROR, args[2])
+			} else if len(job.Jobs) > 0 {
+				this.simpleHandler.jobHandle(job.Jobs, cp)
 			} else {
 				gErr = global.INTERNAL_ERROR
 			}
 		}
 		return
 	}
-	this.methodMap["L"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+	this.methodMapJob["L"] = func(job *Job, cp *global.CheckedParams, args []interface{}) (response interface{}, gErr *global.GotrixError) {
 		if global.ToFloat64Must(args[0]) < global.ToFloat64Must(args[1]) {
 			if len(args) >= 3 {
 				gErr = global.NewGotrixError(global.BLANK_ERROR, args[2])
+			} else if len(job.Jobs) > 0 {
+				this.simpleHandler.jobHandle(job.Jobs, cp)
 			} else {
 				gErr = global.INTERNAL_ERROR
 			}
@@ -674,10 +690,10 @@ func (this *handleFunc) initCall() {
 	// 同步调用
 	this.methodMap["SyncCall"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
 
-		var funcId = args[0].(int64)
+		var funcName = args[0].(string)
 		var param = args[1].(map[string]interface{})
 
-		checkedParams := &global.CheckedParams{Func: int(funcId), V: param}
+		checkedParams := &global.CheckedParams{Name: funcName, V: param}
 		return this.simpleHandler.Handle(checkedParams)
 	}
 	// 数组循环调用
@@ -686,11 +702,11 @@ func (this *handleFunc) initCall() {
 			return nil, nil
 		}
 		ja := args[0].([]interface{})
-		funcId, _ := global.ToInt64(args[1])
+		funcName, _ := global.ToString(args[1])
 
 		result := make([]interface{}, 0)
 		for _, v := range ja {
-			checkedParams := &global.CheckedParams{Func: int(funcId), V: v.(map[string]interface{})}
+			checkedParams := &global.CheckedParams{Name: funcName, V: v.(map[string]interface{})}
 			res, ge := this.simpleHandler.Handle(checkedParams)
 			if ge == nil {
 				result = append(result, res)
@@ -726,7 +742,9 @@ func (this *handleFunc) initCall() {
 func (this *handleFunc) initDebug() {
 	// 在控制台输出内容
 	this.methodMap["Println"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
+		log.Println("----------------- Println Start -----------------")
 		log.Println(args...)
+		log.Println("----------------- Println  End  -----------------")
 		return
 	}
 	this.methodMap["Test"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
@@ -817,10 +835,10 @@ func (this *handleFunc) initGotrix() {
 				if function == nil {
 					return nil
 				}
-				checkedParams = &global.CheckedParams{Func: function.Id, V: make(map[string]interface{})}
+				checkedParams = &global.CheckedParams{Name: function.Name, V: make(map[string]interface{})}
 				checkedParams.V["name"] = name
 			} else {
-				checkedParams = &global.CheckedParams{Func: function.Id, V: make(map[string]interface{})}
+				checkedParams = &global.CheckedParams{Name: function.Name, V: make(map[string]interface{})}
 			}
 			result, gotrixError := this.simpleHandler.Handle(checkedParams)
 			if gotrixError != nil {

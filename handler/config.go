@@ -13,11 +13,15 @@ import (
 	"github.com/zhutingle/gotrix/global"
 )
 
+var jobReg = regexp.MustCompile("^(\\$(\\w+)\\s*=)?\\s*(.*)$")
 var funcReg *regexp.Regexp = regexp.MustCompile("^(\\w+)\\((.*)\\)$")
 var argsReg *regexp.Regexp = regexp.MustCompile("((true)|(false)|(null)|(-?\\d+)|(-?\\d+\\.\\d+)|(\\'.*?\\')|(\\$\\{\\w+\\}))(?:,|$)")
 var sqlArgsReg *regexp.Regexp = regexp.MustCompile("\\$\\{\\w+\\}")
 var autoTagReg *regexp.Regexp = regexp.MustCompile("<auto>(.*?)</auto>")
 var autoTagItemReg *regexp.Regexp = regexp.MustCompile("\\w+\\s*=\\s*\\$\\{\\w+\\}\\s*(?:,|$|(and))\\s*")
+var cdataExp = regexp.MustCompile("^\\s*<!\\[CDATA\\[([\\w\\W]*?)\\]\\]>\\s*$")
+var autoExp = regexp.MustCompile("<auto>.*?</auto>")
+var jobTagReg *regexp.Regexp = regexp.MustCompile("<job>[\\w\\W]*?</job>")
 
 type Result struct {
 	Sql  []Sql  `xml:"sql"`
@@ -51,13 +55,13 @@ type Page struct {
 }
 
 type Job struct {
-	Result  string `xml:"result,attr"`
-	Test    string `xml:"test,attr"`
-	Type    string `xml:"type,attr"`
-	Job     string `xml:",innerxml"`
-	handle  Handle
-	testJob *Job
-	auto    bool
+	Result string `xml:"result,attr"`
+	Test   string `xml:"test,attr"`
+	Type   string `xml:"type,attr"`
+	Job    string `xml:",innerxml"`
+	Jobs   []Job  `xml:"job"`
+	handle Handle
+	auto   bool
 }
 
 type Param struct {
@@ -136,7 +140,6 @@ func dealWithResult(result *Result) {
 func dealWithFuncs(funcs []Func) {
 	for i := 0; i < len(funcs); i++ {
 		v := funcs[i]
-		funcMap[v.Id] = &v
 		funcNameMap[v.Name] = &v
 
 		v.Param = dealWithParam(v.Param)
@@ -185,19 +188,28 @@ func dealWithParam(params []Param) []Param {
 }
 
 func dealWithJob(jobs []Job) {
-	// 去掉Job的<![CDATA[]]>标签
-	cdataExp := regexp.MustCompile("^\\s*<!\\[CDATA\\[([\\w\\W]*?)\\]\\]>\\s*$")
-	autoExp := regexp.MustCompile("<auto>.*?</auto>")
+
 	for j := 0; j < len(jobs); j++ {
+		// 去掉Job的<![CDATA[]]>标签
 		flag := cdataExp.MatchString(jobs[j].Job)
 		if flag {
 			jobs[j].Job = cdataExp.FindAllStringSubmatch(jobs[j].Job, -1)[0][1]
 		}
-		jobs[j].Job = strings.TrimSpace(jobs[j].Job)
+		jobs[j].Job = strings.TrimSpace(jobTagReg.ReplaceAllString(jobs[j].Job, ""))
 	}
 
 	// 解析Job标签，并给不同的Job标签添加不同的处理器
 	for j := 0; j < len(jobs); j++ {
+
+		// $result = ...
+		// 取出结果变量 result
+		jobMatchs := jobReg.FindAllStringSubmatch(jobs[j].Job, -1)
+		if jobMatchs != nil {
+			if jobMatchs[0][2] != "" {
+				jobs[j].Result = jobMatchs[0][2]
+			}
+			jobs[j].Job = jobMatchs[0][3]
+		}
 
 		jobs[j].auto = autoExp.MatchString(jobs[j].Job)
 
@@ -219,11 +231,9 @@ func dealWithJob(jobs []Job) {
 			}
 		}
 
-		// 解析Test标签，将Test标签转换为testJob
-		if len(jobs[j].Test) > 0 {
-			jobs[j].testJob = &Job{Job: jobs[j].Test}
-		}
+		dealWithJob(jobs[j].Jobs)
 	}
+
 }
 
 func readXmlFile(xmlFileName string, result *Result) {
