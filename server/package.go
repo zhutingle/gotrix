@@ -180,7 +180,7 @@ func packageTarget(staticDir string, targetDir string) {
 	}
 
 	// 写入各文件至输出文件夹
-	for _, files := range []map[string][]byte{htmlFiles, jsFiles, cssFiles, imgCacheFiles, ttfFiles} {
+	for _, files := range []map[string][]byte{htmlFiles, jsFiles, cssFiles, imgCacheFiles, imgFiles, ttfFiles} {
 		for shortPath, bs := range files {
 			writeToFile(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/"+shortPath))), bs)
 		}
