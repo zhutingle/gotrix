@@ -117,7 +117,7 @@ func packageTarget(staticDir string, targetDir string) {
 			cssFiles[shortPath], err = ioutil.ReadFile(longPath)
 		} else if strings.HasSuffix(shortPath, ".js") {
 			jsFiles[shortPath], err = ioutil.ReadFile(longPath)
-		} else if strings.HasSuffix(shortPath, ".png") || strings.HasSuffix(shortPath, ".jpg") || strings.HasSuffix(shortPath, ".jpeg") || strings.HasSuffix(shortPath, ".gif") {
+		} else if strings.HasSuffix(shortPath, ".png") || strings.HasSuffix(shortPath, ".jpg") || strings.HasSuffix(shortPath, ".jpeg") || strings.HasSuffix(shortPath, ".gif") || strings.HasSuffix(shortPath, ".ico") {
 			imgFiles[shortPath], err = ioutil.ReadFile(longPath)
 		} else if strings.HasSuffix(shortPath, ".ttf") {
 			ttfFiles[shortPath], err = ioutil.ReadFile(longPath)
