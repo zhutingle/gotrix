@@ -205,7 +205,7 @@ func dealWithJob(jobs []Job) {
 		// 取出结果变量 result
 		jobMatchs := jobReg.FindAllStringSubmatch(jobs[j].Job, -1)
 		if jobMatchs != nil {
-			if jobMatchs[0][2] != "" {
+			if len(jobMatchs[0][2]) > 0 {
 				jobs[j].Result = jobMatchs[0][2]
 			}
 			jobs[j].Job = jobMatchs[0][3]

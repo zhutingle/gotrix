@@ -134,7 +134,7 @@ func packageTarget(staticDir string, targetDir string) {
 	}
 
 	// 对各 html、js 文件进行 onload 替换处理
-	onloadReg := regexp.MustCompile("<img[^<>]*?src=\"([^+<>!\\s]*?)\"[^<>]*?>")
+	onloadReg := regexp.MustCompile("<img[^<>]*?[^:]src=\"([^+<>!\\s]*?)\"[^<>]*?>")
 	for _, files := range []map[string][]byte{htmlFiles, jsFiles} {
 		for shortPath, bs := range files {
 			files[shortPath] = onloadReg.ReplaceAllFunc(bs, func(match []byte) []byte {
