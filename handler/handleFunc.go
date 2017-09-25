@@ -256,12 +256,10 @@ func (this *handleFunc) initJudge() {
 	// 第一个参数不等于第二个参数时抛出异常
 	// 第三个参数不为空时抛出第三个参数所示文字的异常，为空时抛出内部异常
 	this.methodMapJob["Neq"] = func(job *Job, cp *global.CheckedParams, args []interface{}) (response interface{}, gErr *global.GotrixError) {
-		fmt.Println(args)
 		if args[0] != args[1] {
 			if len(args) >= 3 {
 				gErr = global.NewGotrixError(global.BLANK_ERROR, args[2])
 			} else if len(job.Jobs) > 0 {
-				fmt.Println(job.Jobs);
 				this.simpleHandler.jobHandle(job.Jobs, cp)
 			} else {
 				gErr = global.INTERNAL_ERROR
