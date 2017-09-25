@@ -21,7 +21,7 @@ var autoTagReg *regexp.Regexp = regexp.MustCompile("<auto>(.*?)</auto>")
 var autoTagItemReg *regexp.Regexp = regexp.MustCompile("\\w+\\s*=\\s*\\$\\{\\w+\\}\\s*(?:,|$|(and))\\s*")
 var cdataExp = regexp.MustCompile("^\\s*<!\\[CDATA\\[([\\w\\W]*?)\\]\\]>\\s*$")
 var autoExp = regexp.MustCompile("<auto>.*?</auto>")
-var jobTagReg *regexp.Regexp = regexp.MustCompile("<job>[\\w\\W]*?</job>")
+var jobTagReg *regexp.Regexp = regexp.MustCompile("<job.*?>[\\w\\W]*?</job>")
 
 type Result struct {
 	Sql  []Sql  `xml:"sql"`
