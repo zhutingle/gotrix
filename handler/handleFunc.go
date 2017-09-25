@@ -261,6 +261,7 @@ func (this *handleFunc) initJudge() {
 			if len(args) >= 3 {
 				gErr = global.NewGotrixError(global.BLANK_ERROR, args[2])
 			} else if len(job.Jobs) > 0 {
+				fmt.Println(job.Jobs);
 				this.simpleHandler.jobHandle(job.Jobs, cp)
 			} else {
 				gErr = global.INTERNAL_ERROR
