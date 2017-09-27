@@ -81,6 +81,9 @@
         return P.ls('session');
     }
 
+    P.writeSession = writeSession;
+    P.getSession = getSession;
+
     P.extend = function () {
         /*
          　　*target被扩展的对象
