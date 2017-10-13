@@ -16,6 +16,8 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+	"io"
+	"io/ioutil"
 )
 
 func GotrixServer() {
@@ -90,6 +92,7 @@ func Server() {
 	gotrixHandler.Init()
 
 	http.HandleFunc("/gotrix/", serverHandler)
+	http.HandleFunc("/gotrix/push.action", pushHandler)
 	http.HandleFunc("/gotrix/wxpay.action", wxpayCallback)
 
 	// Debug 模式和非 Debug 模式的区别全写在这里，其它地方不允许写
@@ -172,6 +175,17 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 	logBuffer.WriteRune('\n')
 	log.Println(logBuffer.String())
 
+}
+
+func pushHandler(w http.ResponseWriter, r *http.Request) {
+	var reader io.Reader = r.Body
+	b, e := ioutil.ReadAll(reader)
+	if e != nil {
+		log.Println(e)
+		return
+	}
+
+	log.Println(string(b))
 }
 
 func wxpayCallback(w http.ResponseWriter, r *http.Request) {
