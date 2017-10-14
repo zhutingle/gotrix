@@ -129,7 +129,6 @@ func InitArgs() {
 		}
 	}
 
-	log.Println(Config.GitPath)
 }
 
 func InitConfiguration() {

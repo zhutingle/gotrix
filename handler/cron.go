@@ -33,6 +33,9 @@ func (this SimpleHandler) cronTask() {
 	// 初始化 cronManager
 	if this.cronManager == nil {
 		this.cronManager = cron.New()
+	} else {
+		this.cronManager.Stop()
+		this.cronManager = cron.New()
 	}
 	// 遍历所有 Func 对象，取出所有配置有 cron 属性的 Func 对象，并将它加入定时任务
 	for _, d := range funcNameMap {

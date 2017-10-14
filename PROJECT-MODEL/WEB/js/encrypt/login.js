@@ -403,7 +403,7 @@
         var rand = P.rand();
         var S = P.secretKey(rand);
 
-        $.self({
+        P.self({
             func: 9,
             code: code,
             parent: parent,

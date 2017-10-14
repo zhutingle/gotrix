@@ -178,15 +178,6 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 
 func pushHandler(w http.ResponseWriter, r *http.Request) {
 
-	//cmd := exec.Command("unset", "GIT_DIR")
-	//cmd.Dir = global.Config.WEB.Base
-	//f, err := cmd.Output()
-	//if err != nil {
-	//	fmt.Println(err)
-	//	return
-	//}
-	//fmt.Println(string(f))
-
 	if len(global.Config.GitPath) > 0 {
 
 		go func() {
@@ -199,6 +190,8 @@ func pushHandler(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			fmt.Println(string(f))
+
+			gotrixHandler.Init()
 
 			packageTarget(global.Config.WEB.Static, global.Config.WEB.Target, global.Config.Args.Debug)
 
