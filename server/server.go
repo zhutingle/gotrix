@@ -16,8 +16,6 @@ import (
 	"runtime"
 	"strconv"
 	"time"
-	"io"
-	"io/ioutil"
 )
 
 func GotrixServer() {
@@ -178,14 +176,19 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func pushHandler(w http.ResponseWriter, r *http.Request) {
-	var reader io.Reader = r.Body
-	b, e := ioutil.ReadAll(reader)
-	if e != nil {
-		log.Println(e)
+
+	cmd := exec.Command("git", "pull")
+	cmd.Dir = global.Config.WEB.Base
+
+	f, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
 		return
 	}
+	fmt.Println(string(f))
 
-	log.Println(string(b))
+	w.Write([]byte("success"))
+
 }
 
 func wxpayCallback(w http.ResponseWriter, r *http.Request) {
