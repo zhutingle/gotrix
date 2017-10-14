@@ -8,6 +8,7 @@ import (
 	"github.com/BurntSushi/toml"
 	"log"
 	"os"
+	"os/exec"
 	"path"
 	"path/filepath"
 )
@@ -24,6 +25,7 @@ type Configuration struct {
 	Email    Email
 	V        []V
 	M        map[string]interface{}
+	GitPath  string
 }
 
 type Args struct {
@@ -32,7 +34,7 @@ type Args struct {
 	Console    bool   // 控制台参数 --console
 	Debug      bool
 
-	password   string // 控制台参数 --password {{password}} ，该参数不允许在配置文件中配置，否则容易被窃取
+	password string // 控制台参数 --password {{password}} ，该参数不允许在配置文件中配置，否则容易被窃取
 }
 
 type Dir struct {
@@ -89,7 +91,7 @@ func InitArgs() {
 	for i, arg := range args {
 		switch arg {
 		case "--config", "-f":
-			Config.Args.ConfigFile = args[i + 1]
+			Config.Args.ConfigFile = args[i+1]
 			break
 		case "--decrypt", "-d":
 			Config.Args.Decrypt = true
@@ -98,7 +100,10 @@ func InitArgs() {
 			Config.Args.Console = true
 			break
 		case "--password", "-p":
-			Config.Args.password = args[i + 1]
+			Config.Args.password = args[i+1]
+			break
+		case "--git-path":
+			Config.GitPath = args[i+1]
 			break
 		default:
 			break
@@ -114,6 +119,17 @@ func InitArgs() {
 		}
 		Config.Args.ConfigFile = filepath.Join(s, filepath.FromSlash(path.Clean("/gotrix.conf")))
 	}
+
+	// 如未指定 Git 目录，则从系统中寻找
+	if len(Config.GitPath) == 0 {
+		var err error
+		Config.GitPath, err = exec.LookPath("git")
+		if err != nil {
+			log.Println("Git 目录获取失败，无法配置自动更新！")
+		}
+	}
+
+	log.Println(Config.GitPath)
 }
 
 func InitConfiguration() {
@@ -188,7 +204,7 @@ func StartProcess() {
 	}
 	log.Println("日志文件创建成功：", Config.WEB.LogFile)
 
-	process, err := os.StartProcess(filePath, os.Args, &os.ProcAttr{Env: []string{"--console", "--password", Config.Args.password}, Files: []*os.File{logFile, logFile, logFile}})
+	process, err := os.StartProcess(filePath, os.Args, &os.ProcAttr{Env: []string{"--console", "--password", Config.Args.password, "--git-path", Config.GitPath}, Files: []*os.File{logFile, logFile, logFile}})
 	if err != nil {
 		log.Println(err)
 	}
