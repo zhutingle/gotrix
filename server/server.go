@@ -95,9 +95,10 @@ func Server() {
 
 	// Debug 模式和非 Debug 模式的区别全写在这里，其它地方不允许写
 	if global.Config.Args.Debug {
+		packageTarget(global.Config.WEB.Static, global.Config.WEB.Target, global.Config.Args.Debug)
 		http.Handle("/", http.FileServer(DevDir(global.Config.WEB.Static)))
 	} else {
-		packageTarget(global.Config.WEB.Static, global.Config.WEB.Target)
+		packageTarget(global.Config.WEB.Static, global.Config.WEB.Target, global.Config.Args.Debug)
 		http.Handle("/", http.FileServer(http.Dir(global.Config.WEB.Target)))
 	}
 
@@ -177,15 +178,27 @@ func serverHandler(w http.ResponseWriter, r *http.Request) {
 
 func pushHandler(w http.ResponseWriter, r *http.Request) {
 
-	cmd := exec.Command("git", "pull")
+	cmd := exec.Command("unset", "GIT_DIR")
 	cmd.Dir = global.Config.WEB.Base
-
 	f, err := cmd.Output()
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	fmt.Println(string(f))
+
+	cmd = exec.Command("git", "pull")
+	cmd.Dir = global.Config.WEB.Base
+	f, err = cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(string(f))
+
+	go func() {
+		packageTarget(global.Config.WEB.Static, global.Config.WEB.Target, global.Config.Args.Debug)
+	}()
 
 	w.Write([]byte("success"))
 

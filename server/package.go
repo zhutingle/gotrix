@@ -57,7 +57,7 @@ func packageToGotrix(staticDir string, fileName string) {
 }
 
 // 对静态文件夹进行打包处理，输出到输出文件夹
-func packageTarget(staticDir string, targetDir string) {
+func packageTarget(staticDir string, targetDir string, debug bool) {
 
 	// 判断输出文件夹是否存在，不存在则创建
 	createDir(targetDir)
@@ -180,11 +180,14 @@ func packageTarget(staticDir string, targetDir string) {
 	}
 
 	// 写入各文件至输出文件夹
-	for _, files := range []map[string][]byte{htmlFiles, jsFiles, cssFiles, imgCacheFiles, imgFiles, ttfFiles} {
-		for shortPath, bs := range files {
-			writeToFile(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/"+shortPath))), bs)
+	if !debug {
+		for _, files := range []map[string][]byte{htmlFiles, jsFiles, cssFiles, imgCacheFiles, imgFiles, ttfFiles} {
+			for shortPath, bs := range files {
+				writeToFile(filepath.Join(targetDir, filepath.FromSlash(path.Clean("/"+shortPath))), bs)
+			}
 		}
 	}
+
 }
 
 func createMd5String(md5Map map[string]string) []byte {
