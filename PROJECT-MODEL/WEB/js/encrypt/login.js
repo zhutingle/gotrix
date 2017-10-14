@@ -359,6 +359,7 @@
                     try {
                         d = JSON.parse(text.replace(/\n/, '\\\n'));
                     } catch (e1) {
+                        console.error(text);
                         errorFunc(text);
                         return;
                     }

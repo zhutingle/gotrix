@@ -33,8 +33,8 @@ import (
 
 type handleFunc struct {
 	simpleHandler SimpleHandler
-	methodMap map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
-	methodMapJob map[string]func(job *Job, cp *global.CheckedParams, args []interface{}) (response interface{}, gErr *global.GotrixError)
+	methodMap     map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
+	methodMapJob  map[string]func(job *Job, cp *global.CheckedParams, args []interface{}) (response interface{}, gErr *global.GotrixError)
 }
 
 func (this *handleFunc) handle(job *Job, cp *global.CheckedParams) (result interface{}, gErr *global.GotrixError) {
@@ -334,12 +334,18 @@ func (this *handleFunc) initRand() {
  */
 func (this *handleFunc) initSpecial() {
 	this.methodMap["Return"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
-		gErr = &global.GotrixError{Status: 0, Msg: args[0].(string)}
+		if len(args) == 0 {
+			gErr = &global.GotrixError{Status: 0, Msg: ""}
+		} else {
+			gErr = &global.GotrixError{Status: 0, Msg: global.ToStringMust(args[0])}
+		}
 		return
 	}
 	this.methodMap["Config"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {
-		key := args[0].(string)
-		response = global.Config.M[key]
+		if len(args) > 0 {
+			key := args[0].(string)
+			response = global.Config.M[key]
+		}
 		return
 	}
 	this.methodMap["LoginIn"] = func(args []interface{}) (response interface{}, gErr *global.GotrixError) {

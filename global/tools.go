@@ -1,6 +1,7 @@
 package global
 
 import (
+	"encoding/json"
 	"errors"
 	"reflect"
 	"strconv"
@@ -64,6 +65,13 @@ func ToString(v interface{}) (string, error) {
 
 	case float32, float64:
 		return strconv.FormatFloat(ToFloat64Must(v), 'g', 'e', 64), nil
+
+	case map[string]interface{}, []interface{}:
+		bs, err := json.Marshal(v)
+		if err != nil {
+			return zero, errors.New("Tools:Marshal To Json Error.")
+		}
+		return string(bs), nil
 
 	default:
 		return zero, errors.New("tools:This type cannot convert to string.")
