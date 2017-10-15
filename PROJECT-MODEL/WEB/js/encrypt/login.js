@@ -327,11 +327,12 @@
             // TODO 测试一下这个功能
             var form = document.createElement('form');
             form.style.display = 'none';
-            form.action = global.url;
+            form.action = P.global.url;
             form.method = 'POST';
             form.enctype = 'text/plain';
             form.innerHTML = '<input name="' + token + '" value="' + content + '" />';
-            form.commit();
+            document.body.appendChild(form);
+            form.submit();
             return;
         } else {
             ajaxData = token + '=' + content;
