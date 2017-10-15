@@ -13,15 +13,15 @@ import (
 	"github.com/zhutingle/gotrix/global"
 )
 
-var jobReg = regexp.MustCompile("^(\\$(\\w+)\\s*=)?\\s*(.*)$")
+var jobReg = regexp.MustCompile("^(\\$(\\w+)\\s*=)?\\s*([\\s\\S]*)$")
 var funcReg *regexp.Regexp = regexp.MustCompile("^(\\w+)\\((.*)\\)$")
-var argsReg *regexp.Regexp = regexp.MustCompile("((true)|(false)|(null)|(-?\\d+)|(-?\\d+\\.\\d+)|(\\'.*?\\')|(\\$\\{\\w+\\}))(?:,|$)")
+var argsReg *regexp.Regexp = regexp.MustCompile("((true)|(false)|(null)|(-?\\d+)|(-?\\d+\\.\\d+)|(\\'[\\s\\S]*?\\')|(\\$\\{\\w+\\}))(?:,|$)")
 var sqlArgsReg *regexp.Regexp = regexp.MustCompile("\\$\\{\\w+\\}")
-var autoTagReg *regexp.Regexp = regexp.MustCompile("<auto>(.*?)</auto>")
+var autoTagReg *regexp.Regexp = regexp.MustCompile("<auto>([\\s\\S]*?)</auto>")
 var autoTagItemReg *regexp.Regexp = regexp.MustCompile("\\w+\\s*=\\s*\\$\\{\\w+\\}\\s*(?:,|$|(and))\\s*")
-var cdataExp = regexp.MustCompile("^\\s*<!\\[CDATA\\[([\\w\\W]*?)\\]\\]>\\s*$")
-var autoExp = regexp.MustCompile("<auto>.*?</auto>")
-var jobTagReg *regexp.Regexp = regexp.MustCompile("<job.*?>[\\w\\W]*?</job>")
+var cdataExp = regexp.MustCompile("^\\s*<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>\\s*$")
+var autoExp = regexp.MustCompile("<auto>[\\s\\S]*?</auto>")
+var jobTagReg *regexp.Regexp = regexp.MustCompile("\\s*((<job.*?>[\\s\\S]*?</job>)|(<!--[\\s\\S]*-->))\\s*")
 
 type Result struct {
 	Sql  []Sql  `xml:"sql"`
