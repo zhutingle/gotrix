@@ -26,7 +26,12 @@ func (d DevDir) Open(name string) (http.File, error) {
 	}
 	f, err := os.Open(filepath.Join(dir, filepath.FromSlash(path.Clean("/"+name))))
 	if err != nil {
-		return newDevFileWithString(name[1:]), nil
+		fileName := name[1:]
+		bs := parseFromB64(fileName)
+		if bs == nil {
+			return nil, &os.PathError{"open", name, err}
+		}
+		return &DevFile{bs: bs, cur: 0, fileName: fileName}, nil
 	}
 	return newDevFile(f, dir), nil
 }
@@ -142,12 +147,4 @@ func newDevFile(f http.File, dir string) *DevFile {
 	} else {
 		return &DevFile{file: f, fileInfo: fileInfo, bs: bs, cur: 0}
 	}
-}
-
-func newDevFileWithString(fileName string) *DevFile {
-	bs := parseFromB64(fileName)
-	if bs == nil {
-		return nil
-	}
-	return &DevFile{bs: bs, cur: 0, fileName: fileName}
 }

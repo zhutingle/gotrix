@@ -33,8 +33,8 @@ import (
 
 type handleFunc struct {
 	simpleHandler SimpleHandler
-	methodMap     map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
-	methodMapJob  map[string]func(job *Job, cp *global.CheckedParams, args []interface{}) (response interface{}, gErr *global.GotrixError)
+	methodMap map[string]func(args []interface{}) (response interface{}, gErr *global.GotrixError)
+	methodMapJob map[string]func(job *Job, cp *global.CheckedParams, args []interface{}) (response interface{}, gErr *global.GotrixError)
 }
 
 func (this *handleFunc) handle(job *Job, cp *global.CheckedParams) (result interface{}, gErr *global.GotrixError) {
@@ -569,6 +569,9 @@ func (this *handleFunc) initXlsx() {
 
 		// 创建新文件
 		newFileName := time.Now().Format("2006-01-02 15:04:05") + "_" + global.ToStringMust(time.Now().Nanosecond()) + fh.Filename[strings.LastIndex(fh.Filename, "."):]
+		if path[0] != filepath.Separator && strings.Index(path, ":") > -1 {
+			path = global.Config.WEB.Base + string(filepath.Separator) + path
+		}
 		f, err := os.Create(filepath.Clean(path + string(filepath.Separator) + newFileName))
 		if err != nil {
 			gErr = global.UPLOADIMG_CREATE_NEW_FILE_ERROR
